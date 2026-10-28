@@ -1,5 +1,5 @@
 import '@angular/compiler'; // partial-compiled output needs the JIT linker outside a bundler
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const dist = new URL('../dist/grid-angular/', import.meta.url);
 const fail = (msg) => {
@@ -11,6 +11,8 @@ const mod = await import(new URL('fesm2022/grid-master-angular.mjs', dist).href)
 for (const name of ['GmWidget', 'GmHandle', 'GmGrid']) {
   if (!(name in mod)) fail(`missing export ${name}`);
 }
+
+if (!existsSync(new URL('LICENSE', dist))) fail('dist/grid-angular/LICENSE is missing');
 
 const pkg = JSON.parse(readFileSync(new URL('package.json', dist), 'utf8'));
 if (pkg.name !== '@grid-master/angular') fail(`unexpected package name ${pkg.name}`);
