@@ -29,7 +29,7 @@ function insertAt(rest: LayoutItem[], dragged: LayoutItem, index: number): Layou
 /** Validates the target for the mode; null means `invalid`. */
 function toSlot(layout: LayoutItem[], rest: LayoutItem[], config: EngineConfig, dragId: string, target: DropTarget): Slot | null {
   if (config.mode === 'swap') {
-    if ('swapWith' in target && target.swapWith !== dragId && layout.some((i) => i.id === target.swapWith)) {
+    if ('swapWith' in target && layout.some((i) => i.id === target.swapWith)) {
       return { kind: 'swap', swapWith: target.swapWith };
     }
     return null;
@@ -61,6 +61,7 @@ function shrinkInsert(rest: LayoutItem[], dragged: LayoutItem, columns: number, 
 
 /** Candidate item order for the mode, before any rule is applied; `fits` is false when shrink could not make room. */
 function buildCandidate(
+  layout: LayoutItem[],
   rest: LayoutItem[],
   dragged: LayoutItem,
   config: EngineConfig,
@@ -77,8 +78,15 @@ function buildCandidate(
       if (shrunk) return { order: shrunk, fits: true };
       return { order: insertAt(rest, dragged, slot.index), fits: false };
     }
-    case 'swap':
-      throw new Error('not implemented');
+    case 'swap': {
+      if (slot.kind !== 'swap') throw new Error('unreachable: validated slot');
+      const a = layout.findIndex((i) => i.id === dragged.id);
+      const b = layout.findIndex((i) => i.id === slot.swapWith);
+      const order = layout.slice();
+      order[a] = layout[b];
+      order[b] = layout[a];
+      return { order, fits: true };
+    }
   }
 }
 
@@ -101,7 +109,7 @@ function modeAllows(
     case 'shrink':
       return fits;
     case 'swap':
-      throw new Error('not implemented');
+      return true;
   }
 }
 
@@ -128,8 +136,12 @@ export function planDrop(
 
   // Dropping where the item already sits changes nothing, whatever the mode.
   if (slot.kind === 'index' && layout[slot.index]?.id === dragId) return { ok: true, layout };
+  if (slot.kind === 'swap') {
+    if (slot.swapWith === dragId) return { ok: true, layout };
+    if (layout.find((i) => i.id === slot.swapWith)?.locked) return { ok: false, reason: 'locked' };
+  }
 
-  const { order: candidate, fits } = buildCandidate(rest, dragged, config, slot);
+  const { order: candidate, fits } = buildCandidate(layout, rest, dragged, config, slot);
   if (layout.some((item, i) => item.locked && candidate[i]?.id !== item.id)) {
     return { ok: false, reason: 'locked' };
   }
