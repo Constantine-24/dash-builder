@@ -119,6 +119,16 @@ describe('drag', () => {
     expect(marker().hidden).toBe(true);
   });
 
+  test('shrink mode: dropping D on the right half of B squeezes into B\'s row (after is kept)', () => {
+    setup();
+    const { onLayoutChange } = grid({ dropMode: 'shrink' });
+    down(el('D'), 300, 128);
+    move(380, 40);
+    up(380, 40);
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+    expect(onLayoutChange.mock.calls[0][0].map((i: LayoutItem) => [i.id, i.w])).toEqual([['A', 1], ['B', 1], ['D', 2], ['C', 2]]);
+  });
+
   test('block mode, same drag: marker blocked, pointerup does not emit', () => {
     setup();
     const { onLayoutChange } = grid({ dropMode: 'block' });

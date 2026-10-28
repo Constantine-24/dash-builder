@@ -318,13 +318,18 @@ export function createDrag(ctx: DragContext): DragInteraction {
 
   /**
    * resolveTarget indexes count rendered rects; planDrop indexes count list
-   * entries. They differ when a list entry has no (visible) element.
+   * entries. They differ when a list entry has no (visible) element. An "after"
+   * target is anchored on the rect before it (and keeps `after`), a "before"
+   * target on the rect at its index.
    */
   function toListTarget(target: DropTarget, rects: ItemRect[], list: LayoutItem[], dragId: string): DropTarget {
     if (!('index' in target)) return target;
     const rest = list.filter((i) => i.id !== dragId).map((i) => i.id);
     const others = rects.filter((r) => r.id !== dragId);
     if (others.length === 0) return { index: rest.length };
+    if (target.after && target.index > 0) {
+      return { index: rest.indexOf(others[Math.min(target.index, others.length) - 1]!.id) + 1, after: true };
+    }
     if (target.index < others.length) return { index: rest.indexOf(others[target.index]!.id) };
     return { index: rest.indexOf(others[others.length - 1]!.id) + 1 };
   }

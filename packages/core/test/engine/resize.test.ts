@@ -57,4 +57,17 @@ describe('planResize', () => {
       expect(rz(mode, 'C', 2, 1, 1)).toEqual({ ok: true, layout: L });
     }
   });
+
+  test('shrink: a shrunk neighbour may not jump onto the row above: no-room', () => {
+    // rows A | B,C; widening C to 3 shrinks B to 1, which would join A's row
+    const M: LayoutItem[] = [{ id: 'A', w: 3, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 2, h: 1 }];
+    expect(planResize(M, { columns: 4, mode: 'shrink' }, 'C', { w: 3, h: 1 })).toEqual({ ok: false, reason: 'no-room' });
+  });
+
+  test('maxRows below the current height: a resize that keeps the height is ok, one that grows it is max-rows', () => {
+    const tall: LayoutItem[] = [{ id: 'A', w: 2, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 4, h: 3 }]; // 4 rows
+    const cfg4 = { columns: 4, mode: 'insert' as const, maxRows: 3 };
+    expect(sizes(planResize(tall, cfg4, 'A', { w: 1, h: 1 }))).toContainEqual(['A', 1, 1]);
+    expect(planResize(tall, cfg4, 'C', { w: 4, h: 4 })).toEqual({ ok: false, reason: 'max-rows' });
+  });
 });

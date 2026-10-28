@@ -26,7 +26,8 @@ function lineAfter(r: ItemRect, axis: Axis): Marker {
 /**
  * Turns a pointer position into a drop target plus marker geometry.
  * `rects` are in list order and include the dragged item, which is skipped.
- * Indexes are positions in the list without the dragged item.
+ * Indexes are positions in the list without the dragged item. Targets drawn as
+ * an "after" line (right/lower half, beside an item, end of list) carry `after: true`.
  */
 export function resolveTarget(
   rects: ItemRect[],
@@ -51,7 +52,7 @@ export function resolveTarget(
     const before = axis === 'x' ? x < (r.left + r.right) / 2 : y < (r.top + r.bottom) / 2;
     return before
       ? { target: { index: insideIdx }, marker: lineBefore(r, axis) }
-      : { target: { index: insideIdx + 1 }, marker: lineAfter(r, axis) };
+      : { target: { index: insideIdx + 1, after: true }, marker: lineAfter(r, axis) };
   }
 
   if (axis === 'x') {
@@ -59,14 +60,14 @@ export function resolveTarget(
     others.forEach((r, i) => {
       if (y >= r.top && y <= r.bottom && r.right <= x && (best < 0 || r.right >= others[best]!.right)) best = i;
     });
-    if (best >= 0) return { target: { index: best + 1 }, marker: lineAfter(others[best]!, axis) };
+    if (best >= 0) return { target: { index: best + 1, after: true }, marker: lineAfter(others[best]!, axis) };
   }
 
   if (others.length === 0) {
     return { target: { index: 0 }, marker: { kind: 'line', left: 0, top: 0, width: 0, height: 0 } };
   }
   if (y > Math.max(...others.map((r) => r.bottom))) {
-    return { target: { index: others.length }, marker: lineAfter(others[others.length - 1]!, axis) };
+    return { target: { index: others.length, after: true }, marker: lineAfter(others[others.length - 1]!, axis) };
   }
   return null;
 }

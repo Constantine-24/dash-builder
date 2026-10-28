@@ -28,3 +28,23 @@ test('layoutsEqual compares order and sizes', () => {
   expect(layoutsEqual(a, [a[1], a[0]])).toBe(false);
   expect(layoutsEqual(a, [a[0], { ...a[1], w: 3 }])).toBe(false);
 });
+test('non-finite sizes become their minimum', () => {
+  expect(normalizeLayout([
+    { id: 'a', w: NaN, h: Infinity },
+    { id: 'b', w: Infinity, h: NaN, minW: 2, minH: 3 },
+    { id: 'c', w: 1, h: 1, minW: NaN, minH: -Infinity },
+  ], 4)).toEqual([
+    { id: 'a', w: 1, h: 1 },
+    { id: 'b', w: 2, h: 3, minW: 2, minH: 3 },
+    { id: 'c', w: 1, h: 1, minW: 1, minH: 1 },
+  ]);
+});
+test('non-integer sizes are truncated before clamping', () => {
+  expect(normalizeLayout([
+    { id: 'a', w: 2.7, h: 1.9 },
+    { id: 'b', w: 4.5, h: 2.2, minW: 1.8, minH: 2.6 },
+  ], 4)).toEqual([
+    { id: 'a', w: 2, h: 1 },
+    { id: 'b', w: 4, h: 2, minW: 1, minH: 2 },
+  ]);
+});

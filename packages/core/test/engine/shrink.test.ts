@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { planDrop } from '../../src/engine/drop.js';
+import { computeFlow, rowsOf } from '../../src/engine/flow.js';
 import { shrinkRowToFit } from '../../src/engine/shrink.js';
 
 const L = [{ id: 'A', w: 1, h: 1 }, { id: 'B', w: 3, h: 1 }, { id: 'C', w: 2, h: 1 }, { id: 'D', w: 2, h: 1 }];
@@ -21,7 +22,7 @@ describe('shrink mode', () => {
     expect(r.ok && r.layout.map((i) => [i.id, i.w])).toEqual([['A', 1], ['D', 1], ['B', 2]]);
   });
   test('append at end targets the last row', () => {
-    const r = planDrop(L, { columns: 4, mode: 'shrink' }, 'A', { index: 3 });
+    const r = planDrop(L, { columns: 4, mode: 'shrink' }, 'A', { index: 3, after: true });
     expect(r.ok && r.layout.map((i) => [i.id, i.w])).toEqual([['B', 3], ['C', 2], ['D', 1], ['A', 1]]);
   });
   test('single item', () => {
@@ -50,5 +51,37 @@ describe('shrinkRowToFit', () => {
   });
   test('returns row unchanged when it already fits', () => {
     expect(shrinkRowToFit(row, 'X', 6)!.map((i) => i.w)).toEqual([2, 2, 2]);
+  });
+});
+
+describe('shrink target row', () => {
+  const five = [
+    { id: 'A', w: 2, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 2, h: 1 }, { id: 'D', w: 2, h: 1 }, { id: 'E', w: 2, h: 1 },
+  ];
+  test('after: true squeezes into the row of the item before the marker (E after B -> row 0)', () => {
+    const r = planDrop(five, { columns: 4, mode: 'shrink' }, 'E', { index: 2, after: true });
+    expect(r.ok && r.layout.map((i) => [i.id, i.w])).toEqual([['A', 1], ['B', 1], ['E', 2], ['C', 2], ['D', 2]]);
+    expect(r.ok && rowsOf(computeFlow(r.layout, 4))).toEqual([['A', 'B', 'E'], ['C', 'D']]);
+  });
+  test('without after the same index targets the row of the item after the marker (E before C)', () => {
+    const r = planDrop(five, { columns: 4, mode: 'shrink' }, 'E', { index: 2 });
+    expect(r.ok && r.layout.map((i) => [i.id, i.w])).toEqual([['A', 2], ['B', 2], ['E', 2], ['C', 1], ['D', 1]]);
+  });
+  test('after: true is no-room when the row before cannot give way', () => {
+    const locked = five.map((i) => (i.id === 'A' || i.id === 'B' ? { ...i, minW: 2 } : i));
+    expect(planDrop(locked, { columns: 4, mode: 'shrink' }, 'E', { index: 2, after: true })).toEqual({ ok: false, reason: 'no-room' });
+  });
+  test('after: true at index 0 falls back to the row of rest[0]', () => {
+    const r = planDrop(five, { columns: 4, mode: 'shrink' }, 'E', { index: 0, after: true });
+    expect(r.ok && r.layout.map((i) => [i.id, i.w])).toEqual([['E', 2], ['A', 1], ['B', 1], ['C', 2], ['D', 2]]);
+  });
+  test('insert ignores after', () => {
+    const r = planDrop(five, { columns: 4, mode: 'insert' }, 'E', { index: 2, after: true });
+    expect(r.ok && r.layout.map((i) => i.id)).toEqual(['A', 'B', 'E', 'C', 'D']);
+  });
+  test('a shrunk neighbour may not jump onto the row above: no-room', () => {
+    // rows A | B,C | D; D between B and C shrinks B to 1, which would join A's row
+    const M = [{ id: 'A', w: 3, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 2, h: 1 }, { id: 'D', w: 1, h: 1 }];
+    expect(planDrop(M, { columns: 4, mode: 'shrink' }, 'D', { index: 2 })).toEqual({ ok: false, reason: 'no-room' });
   });
 });

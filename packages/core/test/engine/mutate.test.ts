@@ -44,6 +44,12 @@ describe('addItem', () => {
     expect(addItem(full, { ...cfg, maxRows: 2 }, { id: 'E', w: 1, h: 1 }).ok).toBe(true);
   });
 
+  test('maxRows below the current height: an add keeping the height is ok, one growing it is max-rows', () => {
+    const tall: LayoutItem[] = [{ id: 'A', w: 2, h: 1 }, { id: 'B', w: 4, h: 3 }, { id: 'C', w: 2, h: 1 }]; // 5 rows
+    expect(addItem(tall, { ...cfg, maxRows: 3 }, { id: 'E', w: 2, h: 1 }).ok).toBe(true);
+    expect(addItem(tall, { ...cfg, maxRows: 3 }, { id: 'E', w: 3, h: 1 })).toEqual({ ok: false, reason: 'max-rows' });
+  });
+
   test('normalizes: w 9 clamped to 4', () => {
     const r = addItem(L, cfg, { id: 'E', w: 9, h: 1 });
     expect(r.ok && r.layout[4]).toEqual({ id: 'E', w: 4, h: 1 });

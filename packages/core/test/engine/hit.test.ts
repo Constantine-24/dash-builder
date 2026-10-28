@@ -24,14 +24,14 @@ describe('resolveTarget', () => {
 
   test('right half of B while dragging C -> index 2, line at left 424', () => {
     expect(resolveTarget(rects, { x: 380, y: 40 }, 'C', 'insert', 'x')).toEqual({
-      target: { index: 2 },
+      target: { index: 2, after: true },
       marker: { kind: 'line', left: 424, top: 0, width: 0, height: 80 },
     });
   });
 
   test('below everything while dragging A -> end of list', () => {
     expect(resolveTarget(rects, { x: 300, y: 500 }, 'A', 'insert', 'x')).toEqual({
-      target: { index: 3 },
+      target: { index: 3, after: true },
       marker: { kind: 'line', left: 424, top: 88, width: 0, height: 80 },
     });
   });
@@ -49,14 +49,14 @@ describe('resolveTarget', () => {
 
   test('axis y, lower half of first stacked item -> index 1, horizontal line', () => {
     expect(resolveTarget(stacked, { x: 50, y: 70 }, 'X', 'insert', 'y')).toEqual({
-      target: { index: 1 },
+      target: { index: 1, after: true },
       marker: { kind: 'line', left: 0, top: 80, width: 200, height: 0 },
     });
   });
 
   test('beside an item in empty space (axis x) -> drop after nearest left item', () => {
     expect(resolveTarget(rects, { x: 300, y: 40 }, 'B', 'insert', 'x')).toEqual({
-      target: { index: 1 },
+      target: { index: 1, after: true },
       marker: { kind: 'line', left: 100, top: 0, width: 0, height: 80 },
     });
   });
@@ -70,5 +70,13 @@ describe('resolveTarget', () => {
 
   test('pointer over the dragged item itself falls through to empty-space rules', () => {
     expect(resolveTarget(rects, { x: 150, y: 120 }, 'C', 'insert', 'x')).toBeNull();
+  });
+
+  test('after is set only for after-lines: right half yes, left half no', () => {
+    const right = resolveTarget(rects, { x: 380, y: 40 }, 'C', 'insert', 'x')!;
+    const left = resolveTarget(rects, { x: 150, y: 40 }, 'C', 'insert', 'x')!;
+    expect(right.target).toEqual({ index: 2, after: true });
+    expect(left.target).toEqual({ index: 1 });
+    expect('after' in left.target).toBe(false);
   });
 });

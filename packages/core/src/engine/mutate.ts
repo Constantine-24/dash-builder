@@ -1,10 +1,11 @@
-import { computeFlow, totalRows } from './flow.js';
 import { normalizeLayout } from './normalize.js';
+import { exceedsMaxRows } from './rows.js';
 import type { DropResult, EngineConfig, LayoutItem } from './types.js';
 
 /**
  * Adds `item` at `index` (default: append; valid range 0..layout.length).
- * The item is normalized. Checks run in order: duplicate -> invalid index -> max-rows.
+ * The item is normalized. Checks run in order: duplicate -> invalid index -> max-rows
+ * (refused only when the result is taller than both maxRows and the current layout).
  * Shifting locked items is allowed: locks constrain user drags, not developer actions.
  */
 export function addItem(
@@ -18,7 +19,7 @@ export function addItem(
 
   const [normalized] = normalizeLayout([item], config.columns);
   const next = [...layout.slice(0, index), normalized, ...layout.slice(index)];
-  if (config.maxRows !== undefined && totalRows(computeFlow(next, config.columns)) > config.maxRows) {
+  if (exceedsMaxRows(layout, next, config)) {
     return { ok: false, reason: 'max-rows' };
   }
   return { ok: true, layout: next };

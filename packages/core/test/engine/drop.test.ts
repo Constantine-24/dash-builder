@@ -68,4 +68,12 @@ describe('planDrop insert/block', () => {
     expect(planDrop(L, cfg('insert'), 'C', { index: 9 })).toEqual({ ok: false, reason: 'invalid' });
     expect(planDrop(L, cfg('insert'), 'Z', { index: 0 })).toEqual({ ok: false, reason: 'invalid' });
   });
+
+  test('maxRows below the current height: reorders keeping the height are ok, growing it is max-rows', () => {
+    const tall: LayoutItem[] = [
+      { id: 'A', w: 2, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 4, h: 1 }, { id: 'D', w: 4, h: 1 }, { id: 'E', w: 4, h: 1 },
+    ]; // rows A,B | C | D | E = 4 rows
+    expect(ids(planDrop(tall, cfg('insert', 3), 'A', { index: 1 }))).toEqual(['B', 'A', 'C', 'D', 'E']);
+    expect(planDrop(tall, cfg('insert', 3), 'A', { index: 2 })).toEqual({ ok: false, reason: 'max-rows' });
+  });
 });

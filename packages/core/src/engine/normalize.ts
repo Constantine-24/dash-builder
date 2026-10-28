@@ -1,8 +1,15 @@
 import type { LayoutItem } from './types.js';
 
+/** Non-finite -> `min`; otherwise truncated toward zero. */
+function int(value: number, min: number): number {
+  return Number.isFinite(value) ? Math.trunc(value) : min;
+}
+
 /**
- * Returns a normalized copy of `items`: minW is capped to `columns`, w is
- * clamped into [minW, columns], h is raised to at least minH (and 1).
+ * Returns a normalized copy of `items`: w, h, minW and minH are truncated to
+ * integers (non-finite values become their minimum: 1, or minW/minH for w/h),
+ * minW is capped to `columns`, w is clamped into [minW, columns], h is raised
+ * to at least minH (and 1).
  * Optional fields absent in the input stay absent in the output.
  * Throws on duplicate ids.
  */
@@ -13,9 +20,12 @@ export function normalizeLayout(items: LayoutItem[], columns: number): LayoutIte
     seen.add(item.id);
 
     const out: LayoutItem = { ...item };
-    if (item.minW !== undefined) out.minW = Math.min(item.minW, columns);
-    out.w = Math.min(columns, Math.max(item.w, out.minW ?? 1, 1));
-    out.h = Math.max(item.h, out.minH ?? 1, 1);
+    if (item.minW !== undefined) out.minW = Math.min(int(item.minW, 1), columns);
+    if (item.minH !== undefined) out.minH = int(item.minH, 1);
+    const minW = Math.max(out.minW ?? 1, 1);
+    const minH = Math.max(out.minH ?? 1, 1);
+    out.w = Math.min(columns, Math.max(int(item.w, minW), minW));
+    out.h = Math.max(int(item.h, minH), minH);
     return out;
   });
 }

@@ -1,10 +1,10 @@
-import { computeFlow, rowsOf, totalRows } from './flow.js';
-import { rowsWithout, sameRows } from './rows.js';
+import { computeFlow } from './flow.js';
+import { exceedsMaxRows, rowsWithout, sameRows } from './rows.js';
 import { shrinkRowToFit } from './shrink.js';
 import type { DropResult, DropTarget, EngineConfig, LayoutItem } from './types.js';
 
 /** A target already validated against the mode and the list. */
-type Slot = { kind: 'index'; index: number } | { kind: 'swap'; swapWith: string };
+type Slot = { kind: 'index'; index: number; after: boolean } | { kind: 'swap'; swapWith: string };
 
 /** The list with the dragged item removed, plus the dragged item itself. */
 function withoutItem(layout: LayoutItem[], dragId: string): { dragged: LayoutItem; rest: LayoutItem[] } | null {
@@ -26,16 +26,20 @@ function toSlot(layout: LayoutItem[], rest: LayoutItem[], config: EngineConfig, 
     return null;
   }
   if ('index' in target && Number.isInteger(target.index) && target.index >= 0 && target.index <= rest.length) {
-    return { kind: 'index', index: target.index };
+    return { kind: 'index', index: target.index, after: target.after === true };
   }
   return null;
 }
 
-/** Inserted order with the target row shrunk to fit, or null if it can't fit. */
-function shrinkInsert(rest: LayoutItem[], dragged: LayoutItem, columns: number, index: number): LayoutItem[] | null {
+/**
+ * Inserted order with the target row shrunk to fit, or null if it can't fit.
+ * The target row is the row of `rest[index - 1]` for an "after" target, else the
+ * row of `rest[index]` (the last row when index is past the end).
+ */
+function shrinkInsert(rest: LayoutItem[], dragged: LayoutItem, columns: number, index: number, after: boolean): LayoutItem[] | null {
   if (rest.length === 0) return [dragged];
   const placed = computeFlow(rest, columns);
-  const rowNo = placed[Math.min(index, rest.length - 1)].row;
+  const rowNo = placed[after && index > 0 ? index - 1 : Math.min(index, rest.length - 1)].row;
   const first = placed.findIndex((p) => p.row === rowNo);
   const last = first + placed.filter((p) => p.row === rowNo).length - 1;
   // Row slice of `rest`, with the dragged item at its position inside it.
@@ -65,7 +69,7 @@ function buildCandidate(
       return { order: insertAt(rest, dragged, slot.index), fits: true };
     case 'shrink': {
       if (slot.kind !== 'index') throw new Error('unreachable: validated slot');
-      const shrunk = shrinkInsert(rest, dragged, config.columns, slot.index);
+      const shrunk = shrinkInsert(rest, dragged, config.columns, slot.index, slot.after);
       if (shrunk) return { order: shrunk, fits: true };
       return { order: insertAt(rest, dragged, slot.index), fits: false };
     }
@@ -81,6 +85,11 @@ function buildCandidate(
   }
 }
 
+/** Rows of the candidate, ignoring the dragged item, match the rows of the list without it. */
+function keepsRows(rest: LayoutItem[], dragged: LayoutItem, config: EngineConfig, candidate: LayoutItem[]): boolean {
+  return sameRows(rowsWithout(rest, config.columns, dragged.id), rowsWithout(candidate, config.columns, dragged.id));
+}
+
 /** Mode-specific acceptance rule applied to the candidate. */
 function modeAllows(
   rest: LayoutItem[],
@@ -92,22 +101,32 @@ function modeAllows(
   switch (config.mode) {
     case 'insert':
       return true;
-    case 'block': {
-      const before = rowsWithout(rest, config.columns, dragged.id);
-      const after = rowsWithout(candidate, config.columns, dragged.id);
-      return sameRows(before, after);
-    }
+    case 'block':
+      return keepsRows(rest, dragged, config, candidate);
     case 'shrink':
-      return fits;
+      // Only the target row may change: every other row keeps its members (ignoring
+      // the dragged item), so a shrunk neighbour can't jump onto the row above. With
+      // the row count equal this is the same as all rows matching.
+      return fits && keepsRows(rest, dragged, config, candidate);
     case 'swap':
       return true;
   }
 }
 
 /**
- * Plans a drop of `dragId` onto `target`. Checks run in order:
- * invalid -> locked (dragged item, then every locked item keeping its index in
- * the candidate order) -> mode rule -> max-rows. Input is expected to be normalized.
+ * Plans a drop of `dragId` onto `target`. Input is expected to be normalized.
+ * Checks run in order:
+ * 1. invalid: unknown dragId, or a target that doesn't fit the mode (`index` in
+ *    0..rest.length for insert/block/shrink, an existing `swapWith` for swap);
+ * 2. locked: the dragged item is locked;
+ * 3. no-op short-circuits, returning the layout unchanged (`ok`): an index target
+ *    at the item's own position, or a swap with itself;
+ * 4. swap only: a locked swap target -> locked (checked before building a candidate);
+ * 5. locked: every locked item must keep its index in the candidate order;
+ * 6. mode rule -> no-room (block: rows other than the dragged item's are unchanged;
+ *    shrink: the target row could be shrunk to fit and every other row keeps its
+ *    members; insert and swap always pass);
+ * 7. max-rows: the candidate is taller than both maxRows and the current layout.
  */
 export function planDrop(
   layout: LayoutItem[],
@@ -141,7 +160,7 @@ export function planDrop(
   if (!modeAllows(rest, dragged, config, candidate, fits)) return { ok: false, reason: 'no-room' };
 
   // 4. max-rows
-  if (config.maxRows !== undefined && totalRows(computeFlow(candidate, config.columns)) > config.maxRows) {
+  if (exceedsMaxRows(layout, candidate, config)) {
     return { ok: false, reason: 'max-rows' };
   }
 

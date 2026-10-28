@@ -1,5 +1,5 @@
-import { computeFlow, rowsOf, totalRows } from './flow.js';
-import { sameRows } from './rows.js';
+import { computeFlow, rowsOf } from './flow.js';
+import { exceedsMaxRows, rowsWithout, sameRows } from './rows.js';
 import { shrinkRowToFit } from './shrink.js';
 import type { DropResult, EngineConfig, LayoutItem } from './types.js';
 
@@ -22,6 +22,9 @@ function shrunkLayout(layout: LayoutItem[], resized: LayoutItem[], columns: numb
 /**
  * Plans resizing `id` to `size` (clamped to w in [minW ?? 1, columns], h >= minH ?? 1).
  * Checks run in order: invalid -> locked -> no-op -> mode rule -> max-rows.
+ * Shrink mode: the item's row neighbours shrink to fit, and every other row must
+ * keep its members (else no-room). max-rows: refused only when the result is
+ * taller than both maxRows and the current layout.
  * Input is expected to be normalized.
  */
 export function planResize(
@@ -55,12 +58,18 @@ export function planResize(
     case 'shrink': {
       const fitted = shrunkLayout(layout, resized, config.columns, id);
       if (!fitted) return { ok: false, reason: 'no-room' };
+      // Every other row must keep its members (ignoring the resized item): a shrunk
+      // neighbour must not jump onto the row above, nor a later item get pulled up.
+      // With the row count equal, this is the same as all rows matching.
+      if (!sameRows(rowsWithout(layout, config.columns, id), rowsWithout(fitted, config.columns, id))) {
+        return { ok: false, reason: 'no-room' };
+      }
       candidate = fitted;
       break;
     }
   }
 
-  if (config.maxRows !== undefined && totalRows(computeFlow(candidate, config.columns)) > config.maxRows) {
+  if (exceedsMaxRows(layout, candidate, config)) {
     return { ok: false, reason: 'max-rows' };
   }
   return { ok: true, layout: candidate };
