@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "test": "pnpm -r test",
+    "test:smoke": "pnpm -r test:smoke",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck"
   }

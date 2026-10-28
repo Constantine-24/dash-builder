@@ -12,13 +12,19 @@
     },
     "./grid.css": "./dist/grid.css"
   },
+  "sideEffects": [
+    "*.css"
+  ],
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/copy-css.mjs",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {
     "happy-dom": "^21.0.4",

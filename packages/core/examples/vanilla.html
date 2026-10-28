@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>grid-master vanilla example</title>
+  <link rel="stylesheet" href="../dist/grid.css">
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 16px; max-width: 960px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+    #grid { background: #f1f5f9; padding: 8px; border-radius: 8px; }
+    .block { height: 100%; border-radius: 6px; padding: 8px; color: #fff; font-weight: 600; box-sizing: border-box; cursor: grab; }
+    .block small { display: block; font-weight: 400; opacity: 0.85; }
+    .block.locked { cursor: not-allowed; background-image: repeating-linear-gradient(45deg, rgba(0,0,0,.15) 0 8px, transparent 8px 16px); }
+    .block [data-grid-handle] { display: inline-block; background: rgba(0,0,0,.3); border-radius: 4px; padding: 2px 8px; cursor: grab; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>grid-master vanilla example</h1>
+  <div class="toolbar">
+    <label>Drop mode
+      <select id="mode">
+        <option value="insert">insert</option>
+        <option value="block">block</option>
+        <option value="shrink">shrink</option>
+        <option value="swap">swap</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="maxrows"> maxRows = 3</label>
+    <button id="add">Add block</button>
+    <button id="remove">Remove last</button>
+  </div>
+
+  <div id="grid"></div>
+
+  <h3>Layout (updated from onLayoutChange)</h3>
+  <pre id="json"></pre>
+
+  <script type="module">
+    import { createGrid } from '../dist/index.js';
+
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
+    const initial = [
+      { id: 'a', w: 2, h: 2 },
+      { id: 'b', w: 1, h: 1 }, // has a [data-grid-handle]
+      { id: 'c', w: 1, h: 2 },
+      { id: 'd', w: 2, h: 1, locked: true },
+      { id: 'e', w: 3, h: 1 },
+      { id: 'f', w: 1, h: 1 },
+    ];
+
+    const container = document.getElementById('grid');
+    const json = document.getElementById('json');
+    let counter = 0;
+
+    function makeBlock(item, color) {
+      const el = document.createElement('div');
+      el.dataset.gridId = item.id;
+      const block = document.createElement('div');
+      block.className = 'block' + (item.locked ? ' locked' : '');
+      block.style.background = item.locked ? '#475569' : color;
+      if (item.id === 'b') {
+        block.innerHTML = '<span data-grid-handle>drag me</span><small>handle only</small>';
+      } else {
+        block.innerHTML = item.id + '<small>' + (item.locked ? 'locked' : item.w + 'x' + item.h) + '</small>';
+      }
+      el.appendChild(block);
+      return el;
+    }
+
+    initial.forEach((item, i) => container.appendChild(makeBlock(item, colors[i % colors.length])));
+
+    function show(layout) { json.textContent = JSON.stringify(layout, null, 2); }
+
+    const grid = createGrid(container, {
+      columns: 4,
+      layout: initial,
+      dropMode: 'insert',
+      rowHeight: 80,
+      gap: 8,
+      onLayoutChange: show,
+      onReject: (reason) => alert('Rejected: ' + reason),
+    });
+    show(grid.getLayout()); // initial display only; later updates come from onLayoutChange
+
+    document.getElementById('mode').addEventListener('change', (e) => {
+      grid.setOptions({ dropMode: e.target.value });
+    });
+
+    document.getElementById('maxrows').addEventListener('change', (e) => {
+      grid.setOptions({ maxRows: e.target.checked ? 3 : undefined });
+    });
+
+    document.getElementById('add').addEventListener('click', () => {
+      counter += 1;
+      const item = { id: 'n' + counter, w: 1 + (counter % 2), h: 1 };
+      const el = makeBlock(item, colors[counter % colors.length]);
+      container.appendChild(el);      // element first: addItem renders, and render() binds it
+      const result = grid.addItem(item);
+      if (!result.ok) el.remove();    // refused: remove the element again (onReject already fired)
+    });
+
+    document.getElementById('remove').addEventListener('click', () => {
+      const layout = grid.getLayout();
+      const last = layout[layout.length - 1];
+      if (!last) return;
+      grid.removeItem(last.id);
+      container.querySelector('[data-grid-id="' + last.id + '"]')?.remove();
+      grid.refresh();                 // release the removed element
+    });
+  </script>
+</body>
+</html>
