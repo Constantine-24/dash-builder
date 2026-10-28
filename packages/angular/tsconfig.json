@@ -5,7 +5,7 @@
   "compilerOptions": {
     "noImplicitOverride": true,
     "paths": {
-      "grid-angular": [
+      "@grid-master/angular": [
         "./dist/grid-angular"
       ]
     },
@@ -31,6 +31,9 @@
     },
     {
       "path": "./projects/grid-angular/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/demo/tsconfig.app.json"
     }
   ]
 }

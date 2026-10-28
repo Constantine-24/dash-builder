@@ -1,0 +1,80 @@
+<header class="toolbar">
+  <label>
+    Drop mode
+    <select [value]="mode()" (change)="setMode($event)">
+      @for (m of modes; track m) {
+        <option [value]="m" [selected]="m === mode()">{{ m }}</option>
+      }
+    </select>
+  </label>
+  <label><input type="checkbox" [checked]="limit()" (change)="setLimit($event)" /> Limit to 6 rows</label>
+  <button type="button" (click)="add()">Add block</button>
+  <button type="button" (click)="removeLast()">Remove last unlocked</button>
+  <button type="button" (click)="save()">Save</button>
+  <button type="button" (click)="restore()">Restore</button>
+  <button type="button" (click)="reset()">Reset</button>
+  <label><input type="checkbox" [checked]="narrow()" (change)="narrow.set($any($event.target).checked)" /> Narrow preview</label>
+  <span class="status" role="status">{{ status() }}</span>
+</header>
+
+<main>
+  <div class="frame" [class.narrow]="narrow()">
+    <gm-grid
+      [columns]="4"
+      [(layout)]="layout"
+      [dropMode]="mode()"
+      [maxRows]="maxRows()"
+      [rowHeight]="100"
+      [gap]="8"
+      [breakpoint]="640"
+      (reject)="onReject($event)"
+    >
+      @for (item of layout(); track item.id) {
+        <article
+          class="block"
+          [class.locked]="item.locked"
+          [gmWidget]="item.id"
+          [style.background]="block(item.id).color"
+        >
+          <header class="block-head">
+            <strong>{{ block(item.id).title }}</strong>
+            <span class="dim">{{ item.w }}×{{ item.h }}</span>
+          </header>
+          @switch (block(item.id).kind) {
+            @case ('number') {
+              <div class="big">{{ item.id.length * 137 }}</div>
+            }
+            @case ('chart') {
+              <svg class="chart" viewBox="0 0 100 40" preserveAspectRatio="none">
+                <polyline points="0,35 15,25 30,28 45,12 60,18 75,6 100,10" fill="none" stroke="#334155" stroke-width="2" />
+              </svg>
+            }
+            @case ('list') {
+              <ul>
+                <li>First item</li>
+                <li>Second item</li>
+                <li>Third item</li>
+              </ul>
+            }
+            @case ('map') {
+              <div class="grip" gmHandle title="Drag here">⠿ drag handle</div>
+              <div class="map">Fake pannable area</div>
+            }
+            @case ('form') {
+              <div class="form">
+                <input type="text" placeholder="Type here" />
+                <button type="button">Send</button>
+              </div>
+            }
+            @default {
+              <p class="dim">{{ item.locked ? 'Locked: cannot be dragged or resized.' : 'A plain note block.' }}</p>
+            }
+          }
+        </article>
+      }
+    </gm-grid>
+  </div>
+
+  <h2>Layout JSON</h2>
+  <pre>{{ json() }}</pre>
+</main>

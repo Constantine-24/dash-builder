@@ -5,7 +5,8 @@
   "packageManager": "pnpm@12.11.2",
   "scripts": {
     "ng": "ng",
-    "build": "ng build grid-angular",
+    "build": "ng build grid-angular && ng build demo",
+    "start": "ng build grid-angular && ng serve demo",
     "test": "ng test grid-angular --watch=false",
     "typecheck": "tsc --noEmit -p projects/grid-angular/tsconfig.lib.json",
     "test:smoke": "pnpm build && node scripts/smoke.mjs"
