@@ -1,0 +1,81 @@
+/* @grid-master/core base styles. Theme variables can be overridden on the container. */
+.gm-grid {
+  --gm-marker-color: #3b82f6;
+  --gm-marker-blocked-color: #ef4444;
+  --gm-placeholder-border: 2px dashed #94a3b8;
+  --gm-ghost-opacity: 0.85;
+
+  position: relative;
+  grid-template-columns: repeat(var(--gm-columns, 1), minmax(0, 1fr));
+  grid-auto-rows: var(--gm-row-height, 80px);
+  gap: var(--gm-gap, 8px);
+}
+
+.gm-item {
+  grid-column: var(--gm-col);
+  grid-row: var(--gm-row);
+  position: relative;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.gm-marker {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  box-sizing: border-box;
+  background: var(--gm-marker-color);
+  border-radius: 2px;
+}
+.gm-marker[hidden] { display: none; }
+.gm-marker--blocked { background: var(--gm-marker-blocked-color); }
+.gm-marker--swap {
+  background: transparent;
+  border: 2px solid var(--gm-marker-color);
+}
+.gm-marker--swap.gm-marker--blocked { border-color: var(--gm-marker-blocked-color); }
+
+.gm-item--placeholder {
+  border: var(--gm-placeholder-border);
+  background: transparent;
+  opacity: 0.6;
+}
+.gm-item--placeholder > * { visibility: hidden; }
+
+.gm-ghost {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: var(--gm-ghost-opacity);
+  margin: 0;
+}
+
+.gm-resize-handle {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background:
+    linear-gradient(135deg, transparent 50%, currentColor 50%, currentColor 60%, transparent 60%,
+      transparent 75%, currentColor 75%, currentColor 85%, transparent 85%);
+  opacity: 0.5;
+}
+.gm-resize-handle:hover { opacity: 0.9; }
+.gm-grid--narrow .gm-resize-handle { display: none; }
+
+.gm-resize-preview {
+  position: absolute;
+  z-index: 9;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: 2px solid var(--gm-marker-color);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--gm-marker-color) 12%, transparent);
+}
+.gm-resize-preview--blocked {
+  border-color: var(--gm-marker-blocked-color);
+  background: color-mix(in srgb, var(--gm-marker-blocked-color) 12%, transparent);
+}

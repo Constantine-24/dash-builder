@@ -16,6 +16,7 @@
     "dist"
   ],
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && cp src/styles/grid.css dist/grid.css",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
