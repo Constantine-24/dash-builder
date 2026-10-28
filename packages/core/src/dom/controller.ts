@@ -80,8 +80,9 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       render();
     },
   });
-  // Cancel any active drag or resize. Called from setLayout, setOptions, destroy
-  // and from render when the view flips between wide and narrow.
+  // Cancel any active drag or resize. Called from setLayout, setOptions, addItem,
+  // removeItem and from render when the view flips between wide and narrow
+  // (destroy uses drag.destroy(), which also drops any pending click blocker).
   function cancelInteraction(): void {
     drag.cancel();
   }
@@ -247,7 +248,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     destroy() {
       if (destroyed) return;
       destroyed = true;
-      cancelInteraction();
+      drag.destroy(); // like cancelInteraction, but leaves no click blocker behind
       observer?.disconnect();
       for (const node of Array.from(bound.keys())) {
         unbindItem(node);

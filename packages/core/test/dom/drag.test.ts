@@ -510,6 +510,86 @@ describe('drag', () => {
     expect(onClick).toHaveBeenCalledTimes(3);
   });
 
+  const click = (target: Element) => target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+  test('Escape then pointercancel: the click blocker expires; a later click goes through', () => {
+    setup();
+    grid();
+    const onClick = vi.fn();
+    const btn = document.body.appendChild(document.createElement('button')); // outside the grid
+    btn.addEventListener('click', onClick);
+    down(el('C'), 100, 128);
+    move(150, 40);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fire(document, 'pointercancel', 150, 40); // gesture became a scroll / native drag
+    down(btn, 600, 600);
+    up(600, 600);
+    click(btn);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  test('cancel without any release: the next pointerdown ends the blocker', () => {
+    setup();
+    const { g } = grid();
+    const onClick = vi.fn();
+    const btn = document.body.appendChild(document.createElement('button')); // outside the grid
+    btn.addEventListener('click', onClick);
+    down(el('C'), 100, 128);
+    move(150, 40);
+    g.setLayout(L); // cancelled while the pointer is down; its pointerup never arrives
+    fire(btn, 'pointerdown', 600, 600, { pointerId: 2 } as PointerEventInit);
+    click(btn);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  test('cancel while held: the release click is swallowed, the next one is not', () => {
+    setup();
+    const { g } = grid();
+    const onClick = vi.fn();
+    el('C').addEventListener('click', onClick);
+    down(el('C'), 100, 128);
+    move(150, 40);
+    g.setLayout(L);
+    up(150, 40);
+    click(el('C'));
+    expect(onClick).not.toHaveBeenCalled();
+    click(el('C'));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  test('cancel while held: the blocker is capped at 1s even with no further pointer events', () => {
+    vi.useFakeTimers();
+    try {
+      setup();
+      const { g } = grid();
+      const onClick = vi.fn();
+      el('C').addEventListener('click', onClick);
+      down(el('C'), 100, 128);
+      move(150, 40);
+      g.setLayout(L);
+      vi.advanceTimersByTime(999);
+      vi.advanceTimersByTime(1);
+      click(el('C'));
+      expect(onClick).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+    }
+  });
+
+  test('destroy mid-drag: a later click is not swallowed', () => {
+    setup();
+    const { g } = grid();
+    const onClick = vi.fn();
+    el('C').addEventListener('click', onClick);
+    down(el('C'), 100, 128);
+    move(150, 40);
+    g.destroy();
+    up(150, 40);
+    click(el('C'));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
   test('grid.css has no dead .gm-marker--swap rule', async () => {
     const { readFileSync } = await import('node:fs');
     const css = readFileSync('src/styles/grid.css', 'utf8');

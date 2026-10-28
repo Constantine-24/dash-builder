@@ -28,6 +28,8 @@ export interface DragInteraction {
   cancel(): void;
   /** Re-apply touch-action to every bound widget (handles added/removed, lock changes). Called after render. */
   sync(): void;
+  /** Teardown: abort any drag and remove every document listener, including a pending click blocker. */
+  destroy(): void;
 }
 
 const THRESHOLD = 4; // px the pointer must travel before a drag starts
@@ -397,10 +399,20 @@ export function createDrag(ctx: DragContext): DragInteraction {
     if (cur?.started) armClickSwallow(false);
   }
 
+  /** Teardown: abort without arming a click blocker, and drop any armed one. */
+  function destroy(): void {
+    cleanup();
+    disarmClickSwallow();
+  }
+
   // ---- click suppression after a real drag --------------------------------
   // The release of a drag must not activate buttons/links in the widget. One
-  // capture-phase click listener swallows the next click; it is dropped once it
-  // fires, on the next pointerdown, or one tick after the release.
+  // capture-phase click listener swallows the next click. It always expires:
+  // - after a pointerup ending the drag: one tick later;
+  // - after a cancel while the pointer is still down: one tick after that
+  //   pointer's pointerup, immediately on pointercancel (no click follows) or on
+  //   any new pointerdown (a new gesture), and at the latest after PENDING_CAP_MS.
+  const PENDING_CAP_MS = 1000;
   let swallowArmed = false;
   let swallowTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -411,26 +423,39 @@ export function createDrag(ctx: DragContext): DragInteraction {
   }
 
   function expireAfterRelease(): void {
+    removePendingListeners();
+    if (swallowTimer !== null) clearTimeout(swallowTimer);
+    swallowTimer = setTimeout(disarmClickSwallow, 0);
+  }
+
+  function removePendingListeners(): void {
     doc.removeEventListener('pointerup', expireAfterRelease, true);
-    if (swallowArmed) swallowTimer = setTimeout(disarmClickSwallow, 0);
+    doc.removeEventListener('pointercancel', disarmClickSwallow, true);
+    doc.removeEventListener('pointerdown', disarmClickSwallow, true);
   }
 
   function armClickSwallow(released: boolean): void {
     disarmClickSwallow();
     swallowArmed = true;
     doc.addEventListener('click', swallowClick, true);
-    if (released) swallowTimer = setTimeout(disarmClickSwallow, 0);
-    else doc.addEventListener('pointerup', expireAfterRelease, true);
+    if (released) {
+      swallowTimer = setTimeout(disarmClickSwallow, 0);
+      return;
+    }
+    doc.addEventListener('pointerup', expireAfterRelease, true);
+    doc.addEventListener('pointercancel', disarmClickSwallow, true);
+    doc.addEventListener('pointerdown', disarmClickSwallow, true);
+    swallowTimer = setTimeout(disarmClickSwallow, PENDING_CAP_MS);
   }
 
   function disarmClickSwallow(): void {
     if (!swallowArmed) return;
     swallowArmed = false;
     doc.removeEventListener('click', swallowClick, true);
-    doc.removeEventListener('pointerup', expireAfterRelease, true);
+    removePendingListeners();
     if (swallowTimer !== null) clearTimeout(swallowTimer);
     swallowTimer = null;
   }
 
-  return { bind, unbind, cancel, sync };
+  return { bind, unbind, cancel, sync, destroy };
 }
