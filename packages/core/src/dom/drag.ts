@@ -177,8 +177,12 @@ export function createDrag(ctx: DragContext): DragInteraction {
       const handle = target.closest(HANDLE);
       if (!handle || !el.contains(handle)) return;
     } else {
+      // The widget root itself being a link, label or button does not block it (it could
+      // never drag otherwise); only a control inside it does. data-grid-no-drag on the
+      // root still opts the whole widget out.
+      if (el.hasAttribute('data-grid-no-drag')) return;
       const control = target.closest(NO_DRAG);
-      if (control && el.contains(control)) return;
+      if (control && control !== el && el.contains(control)) return;
     }
     const item = ctx.getList().find((i) => i.id === b.id);
     if (!item || item.locked) return;

@@ -324,6 +324,64 @@ describe('drag', () => {
     up(220, 40);
   });
 
+  /** Replace widget `id` with a `<tag>` root carrying the same id, children and geometry. */
+  function retag(id: string, tag: string, attrs: Record<string, string> = {}): HTMLElement {
+    const old = el(id);
+    const next = document.createElement(tag);
+    next.dataset.gridId = id;
+    for (const [k, v] of Object.entries(attrs)) next.setAttribute(k, v);
+    next.append(...Array.from(old.childNodes));
+    next.getBoundingClientRect = old.getBoundingClientRect;
+    old.replaceWith(next);
+    return next;
+  }
+
+  test('a widget whose root is an <a href> still drags', () => {
+    setup();
+    retag('B', 'a', { href: '#b' });
+    const { onLayoutChange } = grid();
+    down(el('B').querySelector('.content')!, 200, 40);
+    move(30, 40);
+    expect(ghost()).not.toBeNull();
+    up(30, 40);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['B', 'A', 'C', 'D']);
+  });
+
+  test('a widget whose root is a <label> still drags', () => {
+    setup();
+    retag('B', 'label');
+    const { onLayoutChange } = grid();
+    down(el('B'), 200, 40);
+    move(30, 40);
+    expect(ghost()).not.toBeNull();
+    up(30, 40);
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+  });
+
+  test('data-grid-no-drag on the widget root opts the whole widget out', () => {
+    setup();
+    el('B').setAttribute('data-grid-no-drag', '');
+    const { onLayoutChange } = grid();
+    down(el('B').querySelector('.content')!, 200, 40);
+    move(30, 40);
+    expect(ghost()).toBeNull();
+    up(30, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('a form control inside a widget whose root is an <a href> still blocks the drag', () => {
+    setup();
+    retag('B', 'a', { href: '#b' });
+    const { onLayoutChange } = grid();
+    const input = document.createElement('input');
+    el('B').appendChild(input);
+    down(input, 200, 40);
+    move(30, 40);
+    expect(ghost()).toBeNull();
+    up(30, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
   test('a [data-grid-handle] that is a <button> still starts the drag', () => {
     setup();
     const handle = document.createElement('button');
