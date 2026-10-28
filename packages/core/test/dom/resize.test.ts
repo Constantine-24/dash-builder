@@ -204,7 +204,7 @@ describe('resize', () => {
     const { g, onLayoutChange } = grid();
     down(handle('A')!, HX, HY);
     move(HX + 108, HY);
-    g.setLayout(L);
+    g.setLayout(L.map((i) => (i.id === 'D' ? { ...i, h: 2 } : i)));
     expect(preview()).toBeNull();
     up(HX + 108, HY);
     expect(onLayoutChange).not.toHaveBeenCalled();
@@ -215,7 +215,7 @@ describe('resize', () => {
     const { g, onLayoutChange } = grid();
     down(handle('A')!, HX, HY);
     move(HX + 108, HY);
-    g.setOptions({ gap: 8 });
+    g.setOptions({ gap: 4 });
     expect(preview()).toBeNull();
     up(HX + 108, HY);
     expect(onLayoutChange).not.toHaveBeenCalled();

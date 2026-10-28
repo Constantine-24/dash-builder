@@ -200,4 +200,33 @@ describe('createGrid', () => {
     expect(container.style.display).toBe('');
     expect(container.style.getPropertyValue('--gm-columns')).toBe('');
   });
+
+  test('after destroy every method is inert: nothing is re-applied and no listener fires', () => {
+    setup();
+    const onLayoutChange = vi.fn();
+    const onReject = vi.fn();
+    const g = createGrid(container, { columns: 4, layout: L, onLayoutChange, onReject });
+    g.destroy();
+    g.setLayout([...L, { id: 'E', w: 1, h: 1 }]);
+    g.setOptions({ columns: 2, gap: 2 });
+    expect(g.addItem({ id: 'F', w: 1, h: 1 })).toEqual({ ok: false, reason: 'invalid' });
+    g.removeItem('A');
+    g.refresh();
+    g.destroy(); // idempotent
+    expect(container.className).not.toMatch(/gm-/);
+    expect(container.querySelector('[class*="gm-"]')).toBeNull();
+    expect(container.querySelector('.gm-marker, .gm-resize-handle')).toBeNull();
+    expect(container.style.cssText).not.toMatch(/--gm-/);
+    for (const id of ['A', 'B', 'C', 'D']) expect(el(id).style.cssText).not.toMatch(/--gm-/);
+    expect(g.getLayout()).toEqual(L);
+    expect(g.getLayout()).not.toBe(g.getLayout());
+    // a former widget does not start a drag
+    const PE: typeof MouseEvent = typeof PointerEvent !== 'undefined' ? PointerEvent : MouseEvent;
+    el('A').dispatchEvent(new PE('pointerdown', { clientX: 5, clientY: 5, bubbles: true, button: 0 }));
+    document.dispatchEvent(new PE('pointermove', { clientX: 60, clientY: 60, bubbles: true }));
+    document.dispatchEvent(new PE('pointerup', { clientX: 60, clientY: 60, bubbles: true }));
+    expect(document.body.querySelector('.gm-ghost')).toBeNull();
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(onReject).not.toHaveBeenCalled();
+  });
 });

@@ -10,6 +10,9 @@ const L: LayoutItem[] = [
   { id: 'D', w: 2, h: 1 },
 ];
 
+/** A layout different from L (D taller): setLayout with it really changes the layout and cancels. */
+const changed: LayoutItem[] = L.map((i) => (i.id === 'D' ? { ...i, h: 2 } : i));
+
 type Box = { left: number; top: number; right: number; bottom: number };
 // Task 8 geometry (4 columns, 8px gap)
 const WIDE: Record<string, Box> = {
@@ -193,7 +196,7 @@ describe('drag', () => {
     const { g, onLayoutChange } = grid();
     down(el('C'), 100, 128);
     move(150, 40);
-    g.setLayout(L);
+    g.setLayout(changed);
     expect(ghost()).toBeNull();
     expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
     expect(marker().hidden).toBe(true);
@@ -207,6 +210,45 @@ describe('drag', () => {
     down(el('C'), 100, 128);
     move(150, 40);
     g.setOptions({ gap: 4 });
+    expect(ghost()).toBeNull();
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('setLayout with an equal layout mid-drag is a no-op: the drag continues and emits', () => {
+    setup();
+    const { g, onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    g.setLayout(structuredClone(L));
+    expect(ghost()).not.toBeNull();
+    up(150, 40);
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['A', 'C', 'B', 'D']);
+  });
+
+  test('setOptions with only a new callback mid-drag does not cancel; the drop emits via the new callback', () => {
+    setup();
+    const { g, onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    const next = vi.fn();
+    g.setOptions({ onLayoutChange: next });
+    expect(ghost()).not.toBeNull();
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(order(next.mock.calls[0][0])).toEqual(['A', 'C', 'B', 'D']);
+  });
+
+  test('setOptions with an unchanged dropMode mid-drag does not cancel; a changed one does', () => {
+    setup();
+    const { g, onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    g.setOptions({ dropMode: 'insert' }); // the default: same effective value
+    expect(ghost()).not.toBeNull();
+    g.setOptions({ dropMode: 'block' });
     expect(ghost()).toBeNull();
     up(150, 40);
     expect(onLayoutChange).not.toHaveBeenCalled();
@@ -288,7 +330,9 @@ describe('drag', () => {
     expect(row('A')).toBe('2 / span 1');
     expect(row('C')).toBe('4 / span 1');
     expect(order(g.getLayout())).toEqual(['A', 'B', 'C', 'D']);
-    g.setLayout(L);
+    g.setLayout(structuredClone(L)); // equal layout: a no-op, the temporary order stays
+    expect(row('D')).toBe('1 / span 1');
+    g.setLayout(L.map((i) => (i.id === 'B' ? { ...i, w: 2 } : i)));
     expect(row('D')).toBe('4 / span 1');
     expect(row('A')).toBe('1 / span 1');
   });
@@ -551,7 +595,7 @@ describe('drag', () => {
     btn.addEventListener('click', onClick);
     down(el('C'), 100, 128);
     move(150, 40);
-    g.setLayout(L); // cancelled while the pointer is down; its pointerup never arrives
+    g.setLayout(changed); // cancelled while the pointer is down; its pointerup never arrives
     fire(btn, 'pointerdown', 600, 600, { pointerId: 2 } as PointerEventInit);
     click(btn);
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -564,7 +608,7 @@ describe('drag', () => {
     el('C').addEventListener('click', onClick);
     down(el('C'), 100, 128);
     move(150, 40);
-    g.setLayout(L);
+    g.setLayout(changed);
     up(150, 40);
     click(el('C'));
     expect(onClick).not.toHaveBeenCalled();
@@ -581,7 +625,7 @@ describe('drag', () => {
       el('C').addEventListener('click', onClick);
       down(el('C'), 100, 128);
       move(150, 40);
-      g.setLayout(L);
+      g.setLayout(changed);
       vi.advanceTimersByTime(999);
       vi.advanceTimersByTime(1);
       click(el('C'));

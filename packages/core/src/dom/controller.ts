@@ -29,11 +29,17 @@ export interface GridController {
 
 const ID_ATTR = 'data-grid-id';
 
+/** Options the geometry or the drop rules depend on; changing one cancels an interaction. */
+const GEOMETRY_KEYS = ['columns', 'dropMode', 'maxRows', 'breakpoint', 'rowHeight', 'gap'] as const;
+type GeometryKey = (typeof GEOMETRY_KEYS)[number];
+const DEFAULTS: Partial<Record<GeometryKey, unknown>> = { dropMode: 'insert', rowHeight: 80, gap: 8, breakpoint: 640 };
+const effective = (o: Partial<GridOptions>, k: GeometryKey): unknown => o[k] ?? DEFAULTS[k];
+
 export function createGrid(container: HTMLElement, options: GridOptions): GridController {
   const opts = { ...options };
   let layout: LayoutItem[] = normalizeLayout(opts.layout, opts.columns);
   let narrow = false;
-  // Temporary narrow-view order (ids) from a narrow drag; never emitted, cleared by setLayout.
+  // Temporary narrow-view order (ids) from a narrow drag; never emitted, cleared by a setLayout that changes the layout.
   let narrowOrder: string[] | null = null;
   let destroyed = false;
 
@@ -94,8 +100,8 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     commit,
     isBusy: () => drag.isActive(),
   });
-  // Cancel any active drag or resize. Called from setLayout, setOptions, addItem,
-  // removeItem and from render when the view flips between wide and narrow
+  // Cancel any active drag or resize. Called from setLayout (when the layout changes),
+  // setOptions (when a geometry option changes), addItem, removeItem and from render when the view flips between wide and narrow
   // (destroy uses drag.destroy() / resize.destroy(), which also drop any pending click blocker).
   function cancelInteraction(): void {
     drag.cancel();
@@ -221,24 +227,32 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
 
   return {
     setLayout(next) {
+      if (destroyed) return;
+      const normalized = normalizeLayout(next, opts.columns);
+      if (layoutsEqual(normalized, layout)) return; // nothing changes: keep any interaction and the narrow order
       cancelInteraction();
       narrowOrder = null;
-      layout = normalizeLayout(next, opts.columns);
+      layout = normalized;
       render();
     },
     setOptions(patch) {
-      cancelInteraction();
+      if (destroyed) return;
+      // Only a change to something the geometry or an in-flight plan depends on cancels.
+      const changed = GEOMETRY_KEYS.some((k) => k in patch && effective(patch, k) !== effective(opts, k));
       Object.assign(opts, patch);
-      let changed = false;
+      if (!changed) return; // callbacks / equal values: nothing to re-render
+      cancelInteraction();
+      let layoutChanged = false;
       if (patch.columns !== undefined) {
         const next = normalizeLayout(layout, opts.columns);
-        changed = !layoutsEqual(layout, next);
+        layoutChanged = !layoutsEqual(layout, next);
         layout = next;
       }
       render();
-      if (changed) emit();
+      if (layoutChanged) emit();
     },
     addItem(item, index) {
+      if (destroyed) return { ok: false, reason: 'invalid' };
       const result = engineAddItem(layout, config(), item, index);
       if (result.ok) {
         cancelInteraction(); // an in-flight plan was computed against the old list
@@ -252,6 +266,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       return result;
     },
     removeItem(id) {
+      if (destroyed) return;
       const next = engineRemoveItem(layout, id);
       if (next === layout) return;
       cancelInteraction(); // an in-flight plan was computed against the old list
@@ -261,7 +276,9 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       emit();
     },
     getLayout: () => layout.map((i) => ({ ...i })),
-    refresh: render,
+    refresh() {
+      if (!destroyed) render();
+    },
     destroy() {
       if (destroyed) return;
       destroyed = true;
