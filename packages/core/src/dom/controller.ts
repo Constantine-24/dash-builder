@@ -223,9 +223,22 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
   }
 
   let observer: ResizeObserver | undefined;
+  let frame: number | null = null; // pending narrow re-check
   if (typeof ResizeObserver !== 'undefined') {
     observer = new ResizeObserver(() => {
-      if (!destroyed && measureNarrow() !== narrow) render();
+      if (destroyed) return;
+      // Rendering here changes the container size inside the observer callback, which the
+      // browser reports as "ResizeObserver loop completed with undelivered notifications".
+      // Defer to a frame instead (one at a time); render at once only without rAF.
+      if (typeof requestAnimationFrame === 'undefined') {
+        if (measureNarrow() !== narrow) render();
+        return;
+      }
+      if (frame !== null) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        if (!destroyed && measureNarrow() !== narrow) render();
+      });
     });
     observer.observe(container);
   }
@@ -292,6 +305,10 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       drag.destroy(); // like cancelInteraction, but leaves no click blocker behind
       resize.destroy(); // also removes the delegated pointerdown listener
       observer?.disconnect();
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+        frame = null;
+      }
       for (const node of Array.from(bound.keys())) {
         unbindItem(node);
         clearItem(node);

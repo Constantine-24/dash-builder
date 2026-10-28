@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createGrid } from '../../src/index.js';
 import type { LayoutItem } from '../../src/index.js';
 
@@ -228,5 +228,65 @@ describe('createGrid', () => {
     expect(document.body.querySelector('.gm-ghost')).toBeNull();
     expect(onLayoutChange).not.toHaveBeenCalled();
     expect(onReject).not.toHaveBeenCalled();
+  });
+});
+
+describe('ResizeObserver', () => {
+  let roCallback: (() => void) | undefined;
+  let frames: Map<number, FrameRequestCallback>;
+  let nextFrame: number;
+  const runFrames = () => {
+    const pending = Array.from(frames.values());
+    frames.clear();
+    for (const cb of pending) cb(0);
+  };
+
+  beforeEach(() => {
+    roCallback = undefined;
+    frames = new Map();
+    nextFrame = 1;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: () => void) { roCallback = cb; }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      const id = nextFrame++;
+      frames.set(id, cb);
+      return id;
+    });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => { frames.delete(id); });
+  });
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  const setWidth = (w: number) =>
+    Object.defineProperty(container, 'clientWidth', { configurable: true, value: w });
+
+  test('callback renders on the next frame, not synchronously, and flips narrow', () => {
+    setup();
+    createGrid(container, { columns: 4, layout: L });
+    expect(container.classList.contains('gm-grid--narrow')).toBe(false);
+    setWidth(500);
+    roCallback!();
+    roCallback!(); // a second notification before the frame schedules nothing more
+    expect(container.classList.contains('gm-grid--narrow')).toBe(false);
+    expect(frames.size).toBe(1);
+    runFrames();
+    expect(container.classList.contains('gm-grid--narrow')).toBe(true);
+    expect(col('D')).toBe('1 / span 1');
+  });
+
+  test('destroy cancels a pending frame', () => {
+    setup();
+    const g = createGrid(container, { columns: 4, layout: L });
+    setWidth(500);
+    roCallback!();
+    expect(frames.size).toBe(1);
+    g.destroy();
+    expect(frames.size).toBe(0);
   });
 });
