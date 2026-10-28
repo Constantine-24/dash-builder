@@ -54,7 +54,7 @@ export function Dashboard() {
 ### Rules
 
 - **The layout is controlled.** You own `layout`; update it from `onLayoutChange`. The grid never keeps its own copy. Changing `layout` from outside never calls `onLayoutChange`.
-- **Widgets must be direct DOM children of the grid.** A wrapper component is fine as long as it renders the `Widget` element itself (`function Card(p) { return <Widget id={p.id}>...</Widget>; }`). An extra wrapper `<div>` between the grid and the widgets is not: those widgets are not found.
+- **Widgets must be `<Widget>` elements that are direct DOM children of the grid.** A wrapper component is fine as long as it renders the `Widget` element itself (`function Card(p) { return <Widget id={p.id}>...</Widget>; }`), including one that shows, hides or re-ids its widget from its own state, or a `<Suspense>` boundary around widgets: every `Widget` tells the grid when it commits or unmounts, so the grid picks it up without re-rendering. An extra wrapper `<div>` between the grid and the widgets is not fine: those widgets are not found. A plain `<div data-grid-id>` is not a supported widget either.
 - **Key widgets by id** (`key={item.id}`). The grid emits copies of the items, so keying by object identity or by index would remount widgets after every drop.
 - **Interactive controls don't start drags.** In a widget without a handle, `input`, `textarea`, `select`, `button`, `option`, `label`, `a[href]`, `contenteditable` elements and anything inside `[data-grid-no-drag]` ignore pointer-down for dragging. For a custom control (a canvas, a map), add `data-grid-no-drag` to it, or give the widget a `Widget.Handle`. A widget root that is itself a link, label or button can still be dragged; put `data-grid-no-drag` on the root to opt out.
 - **Locked widgets** (`locked: true`) can't be dragged or resized and keep their index.
@@ -63,7 +63,7 @@ export function Dashboard() {
 
 ### `<Grid>`
 
-Extra props (`className`, `style`, `data-*`, ...) go to the container `div`. `className` is appended to `gm-grid`; `display: grid` is always applied.
+Extra props (`className`, `style`, `data-*`, ...) go to the container `div`. `className` is appended to `gm-grid`; `display: grid` is always applied, so `<Grid hidden>` stays visible: wrap the grid in an element you hide, or hide it with CSS (`display: none !important`).
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -81,22 +81,41 @@ Extra props (`className`, `style`, `data-*`, ...) go to the container `div`. `cl
 
 ### `<Widget>` and `Widget.Handle`
 
-`<Widget id>` renders a `div` with `data-grid-id={id}` (not a DOM `id`); `Widget.Handle` renders a `span` with `data-grid-handle`. Other props go to the element, but the grid attributes always win.
+`<Widget id>` renders a `div` with the class `gm-item` and `data-grid-id={id}` (not a DOM `id`); `Widget.Handle` renders a `span` with `data-grid-handle`. Other props go to the element, but the grid attributes always win: `className` is appended to `gm-item`.
+
+- Changing a widget's `className` while it is being dragged drops the core's drag-state classes (`gm-item--placeholder`, `gm-item--swap-target`, `gm-item--swap-blocked`) until the pointer moves again (swap target) or the next drag (placeholder). The drag and its drop are not affected.
+- `dangerouslySetInnerHTML` on a `Widget` is not supported: it would replace the resize handle the grid puts inside the widget. Set it on an element inside the widget instead.
 
 ### Adding widgets: use the ref
 
 ```tsx
-import { useRef } from 'react';
-import { Grid, Widget, type GridHandle } from '@grid-master/react';
+import { useRef, useState } from 'react';
+import { Grid, Widget, type GridHandle, type LayoutItem } from '@grid-master/react';
 
-const grid = useRef<GridHandle>(null);
+export function Dashboard() {
+  const grid = useRef<GridHandle>(null);
+  const [layout, setLayout] = useState<LayoutItem[]>([]);
 
-function add() {
-  const result = grid.current!.addItem({ id: crypto.randomUUID(), w: 1, h: 1 });
-  if (!result.ok) console.warn('not added:', result.reason);
+  function add() {
+    const result = grid.current!.addItem({ id: crypto.randomUUID(), w: 1, h: 1 });
+    if (!result.ok) console.warn('not added:', result.reason);
+  }
+
+  return (
+    <>
+      <button type="button" onClick={add}>
+        Add
+      </button>
+      <Grid ref={grid} columns={4} layout={layout} onLayoutChange={setLayout}>
+        {layout.map((i) => (
+          <Widget key={i.id} id={i.id}>
+            {i.id}
+          </Widget>
+        ))}
+      </Grid>
+    </>
+  );
 }
-
-// <Grid ref={grid} ... />
 ```
 
 | Method | Description |
