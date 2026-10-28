@@ -1,5 +1,6 @@
 import { computeFlow, rowsOf, totalRows } from './flow.js';
 import { layoutsEqual } from './normalize.js';
+import { shrinkRowToFit } from './shrink.js';
 import type { DropResult, DropTarget, EngineConfig, LayoutItem } from './types.js';
 
 /** A target already validated against the mode and the list. */
@@ -40,6 +41,28 @@ function toSlot(layout: LayoutItem[], rest: LayoutItem[], config: EngineConfig, 
   return null;
 }
 
+/** Candidates built by `shrink` mode where the target row could not be made to fit. */
+const unfittable = new WeakSet<LayoutItem[]>();
+
+/** Inserted order with the target row shrunk to fit, or null if it can't fit. */
+function shrinkInsert(rest: LayoutItem[], dragged: LayoutItem, columns: number, index: number): LayoutItem[] | null {
+  if (rest.length === 0) return [dragged];
+  const placed = computeFlow(rest, columns);
+  const rowNo = placed[Math.min(index, rest.length - 1)].row;
+  const first = placed.findIndex((p) => p.row === rowNo);
+  const last = first + placed.filter((p) => p.row === rowNo).length - 1;
+  // Row slice of `rest`, with the dragged item at its position inside it.
+  const row = insertAt(rest.slice(first, last + 1), dragged, index - first);
+  const fitted = shrinkRowToFit(row, dragged.id, columns);
+  if (!fitted) return null;
+  const widths = new Map(fitted.map((i) => [i.id, i.w]));
+  return insertAt(
+    rest.map((i) => (widths.get(i.id) === i.w ? i : { ...i, w: widths.get(i.id) ?? i.w })),
+    dragged,
+    index,
+  );
+}
+
 /** Candidate item order for the mode, before any rule is applied. */
 function buildCandidate(rest: LayoutItem[], dragged: LayoutItem, config: EngineConfig, slot: Slot): LayoutItem[] {
   switch (config.mode) {
@@ -47,7 +70,14 @@ function buildCandidate(rest: LayoutItem[], dragged: LayoutItem, config: EngineC
     case 'block':
       if (slot.kind !== 'index') throw new Error('unreachable: validated slot');
       return insertAt(rest, dragged, slot.index);
-    case 'shrink':
+    case 'shrink': {
+      if (slot.kind !== 'index') throw new Error('unreachable: validated slot');
+      const shrunk = shrinkInsert(rest, dragged, config.columns, slot.index);
+      if (shrunk) return shrunk;
+      const plain = insertAt(rest, dragged, slot.index);
+      unfittable.add(plain);
+      return plain;
+    }
     case 'swap':
       throw new Error('not implemented');
   }
@@ -72,6 +102,7 @@ function modeAllows(
       return sameRows(before, after);
     }
     case 'shrink':
+      return !unfittable.has(candidate);
     case 'swap':
       throw new Error('not implemented');
   }
