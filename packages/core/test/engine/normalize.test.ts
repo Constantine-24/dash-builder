@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { layoutsEqual, normalizeLayout } from '../../src/engine/normalize';
+import { layoutsEqual, normalizeLayout } from '../../src/engine/normalize.js';
 
 test('clamps w into [minW, columns] and h to >= minH', () => {
   const out = normalizeLayout([

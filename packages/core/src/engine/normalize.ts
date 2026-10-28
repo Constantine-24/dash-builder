@@ -1,4 +1,4 @@
-import type { LayoutItem } from './types';
+import type { LayoutItem } from './types.js';
 
 /**
  * Returns a normalized copy of `items`: minW is capped to `columns`, w is
