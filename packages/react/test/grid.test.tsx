@@ -1,5 +1,5 @@
 import { StrictMode, createRef, useState } from 'react';
-import type { ReactElement, Ref } from 'react';
+import type { CSSProperties, ReactElement, Ref } from 'react';
 import { renderToString } from 'react-dom/server';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,12 +52,14 @@ interface HostProps {
   gridRef?: Ref<GridHandle>;
   /** Called on every render; returns the onLayoutChange recorder for that render. */
   onRender?: () => (l: LayoutItem[]) => void;
+  /** Pass a new inline ghost factory on every render. */
+  inlineGhost?: boolean;
 }
 
 let bump: () => void = () => {};
 
 /** Holds the layout in state. A new `initial` prop replaces it in the same render. */
-function Host({ initial, columns = 4, dropMode, maxRows, changes, rejects, gridRef, onRender }: HostProps) {
+function Host({ initial, columns = 4, dropMode, maxRows, changes, rejects, gridRef, onRender, inlineGhost }: HostProps) {
   const [layout, setLayout] = useState(initial);
   const [prev, setPrev] = useState(initial);
   const [, setTick] = useState(0);
@@ -81,6 +83,7 @@ function Host({ initial, columns = 4, dropMode, maxRows, changes, rejects, gridR
         setLayout(l);
       }}
       onReject={(r) => rejects?.push(r)}
+      ghost={inlineGhost ? () => Object.assign(document.createElement('div'), { className: 'my-ghost' }) : undefined}
     >
       {layout.map((i) => (
         <Widget key={i.id} id={i.id}>
@@ -183,6 +186,30 @@ describe('Grid', () => {
     expect(col('z')).toBe('1 / span 1');
   });
 
+  it('chained addItem/removeItem calls in one handler compose', () => {
+    const changes: LayoutItem[][] = [];
+    const ref = createRef<GridHandle>();
+    mount(<Host initial={SMALL} changes={changes} gridRef={ref} />);
+    act(() => {
+      ref.current!.addItem({ id: 'x', w: 1, h: 1 });
+      ref.current!.addItem({ id: 'y', w: 1, h: 1 });
+    });
+    expect(changes.map(ids)).toEqual([
+      ['a', 'b', 'x'],
+      ['a', 'b', 'x', 'y'],
+    ]);
+    expect(domOrder()).toEqual(['a', 'b', 'x', 'y']);
+    expect(col('y')).toBe('4 / span 1');
+
+    act(() => {
+      ref.current!.addItem({ id: 'z', w: 1, h: 1 });
+      ref.current!.removeItem('a');
+    });
+    expect(ids(changes.at(-1)!)).toEqual(['b', 'x', 'y', 'z']);
+    expect(domOrder()).toEqual(['b', 'x', 'y', 'z']);
+    expect(col('b')).toBe('1 / span 1');
+  });
+
   it('removeItem via ref emits and the widget goes away', () => {
     const changes: LayoutItem[][] = [];
     const ref = createRef<GridHandle>();
@@ -245,12 +272,13 @@ describe('Grid', () => {
 
   it("a parent re-render during a drag doesn't disturb it", () => {
     const changes: LayoutItem[][] = [];
-    mount(<Host initial={SMALL} dropMode="swap" changes={changes} />);
+    mount(<Host initial={SMALL} dropMode="swap" changes={changes} inlineGhost />);
     stubRects(['a', 'b']);
     down(el('b')!, 158, 40);
     move(120, 40); // past the threshold
-    expect(document.querySelector('.gm-ghost')).not.toBeNull();
-    act(() => bump());
+    expect(document.querySelector('.gm-ghost.my-ghost')).not.toBeNull();
+    act(() => bump()); // also passes a new ghost function
+    expect(document.querySelector('.gm-ghost.my-ghost')).not.toBeNull();
     expect(document.querySelector('.gm-ghost')).not.toBeNull();
     move(50, 40); // over a
     up(50, 40);
@@ -306,6 +334,52 @@ describe('Grid', () => {
     expect(document.querySelector('.gm-ghost')).not.toBeNull();
     unmount();
     expect(document.querySelector('.gm-ghost')).toBeNull();
+  });
+
+  it('a className change keeps the core classes and variables', () => {
+    const layout = [{ id: 'a', w: 2, h: 1 }];
+    const ui = (cls: string, breakpoint: number) => (
+      <Grid columns={4} breakpoint={breakpoint} layout={layout} className={cls}>
+        <Widget id="a">a</Widget>
+      </Grid>
+    );
+    // wide (breakpoint 0)
+    const { rerender, unmount } = mount(ui('one', 0));
+    rerender(ui('two', 0));
+    expect(grid().classList.contains('gm-grid')).toBe(true);
+    expect(grid().classList.contains('two')).toBe(true);
+    expect(grid().classList.contains('one')).toBe(false);
+    expect(grid().classList.contains('gm-grid--narrow')).toBe(false);
+    expect(grid().style.getPropertyValue('--gm-columns')).toBe('4');
+    expect(grid().style.display).toBe('grid');
+    expect(col('a')).toBe('1 / span 2');
+    unmount();
+
+    // narrow (happy-dom's clientWidth is 0, below the default 640 breakpoint)
+    const narrow = mount(ui('one', 640));
+    expect(grid().classList.contains('gm-grid--narrow')).toBe(true);
+    narrow.rerender(ui('two', 640));
+    expect(grid().classList.contains('gm-grid')).toBe(true);
+    expect(grid().classList.contains('gm-grid--narrow')).toBe(true);
+    expect(grid().classList.contains('two')).toBe(true);
+    expect(grid().style.getPropertyValue('--gm-columns')).toBe('1');
+  });
+
+  it('a style change that drops display keeps display: grid and the variables', () => {
+    const layout = [{ id: 'a', w: 1, h: 1 }];
+    const ui = (style: CSSProperties) => (
+      <Grid columns={3} breakpoint={0} layout={layout} style={style}>
+        <Widget id="a">a</Widget>
+      </Grid>
+    );
+    const { rerender } = mount(ui({ display: 'block', color: 'red', ['--gm-gap' as string]: '1px' }));
+    expect(grid().style.display).toBe('grid');
+    rerender(ui({ color: 'blue' }));
+    expect(grid().style.display).toBe('grid');
+    expect(grid().style.color).toBe('blue');
+    expect(grid().style.getPropertyValue('--gm-columns')).toBe('3');
+    expect(grid().style.getPropertyValue('--gm-gap')).toBe('8px');
+    expect(grid().classList.contains('gm-grid')).toBe(true);
   });
 
   it('widget id change rebinds', () => {

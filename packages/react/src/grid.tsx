@@ -1,5 +1,5 @@
 import { useImperativeHandle, useLayoutEffect, useRef } from 'react';
-import type { ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
+import type { CSSProperties, ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
 import { addItem as planAdd, createGrid, normalizeLayout, removeItem as planRemove } from '@grid-master/core';
 import type { DropMode, DropResult, GridController, GridOptions, LayoutItem, RejectReason } from '@grid-master/core';
 
@@ -43,6 +43,13 @@ function idSignature(container: HTMLElement): string {
   return ids.join('\n');
 }
 
+function shallowEqual(a: CSSProperties | undefined, b: CSSProperties | undefined): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const ka = Object.keys(a) as (keyof CSSProperties)[];
+  return ka.length === Object.keys(b).length && ka.every((k) => Object.is(a[k], b[k]));
+}
+
 /**
  * A dashboard grid around the `@grid-master/core` controller. The rendered div is the
  * grid container; its direct `<Widget>` children are the widgets. Controlled: the
@@ -62,6 +69,8 @@ export function Grid(props: GridProps) {
     onReject,
     children,
     ref,
+    className,
+    style,
     ...divProps
   } = props;
   const opts = { columns, dropMode, maxRows, rowHeight, gap, breakpoint, ghost };
@@ -74,9 +83,19 @@ export function Grid(props: GridProps) {
   const superseded = useRef(false);
   /** The widget ids (and order) the controller last saw. */
   const lastIds = useRef('');
-  /** The newest props, so callbacks never go stale and never re-create the controller. */
+  /** The className and style the container was last rendered with. */
+  const lastLook = useRef({ className, style });
+  /**
+   * The newest committed props, so callbacks never go stale and never re-create the
+   * controller. addItem/removeItem also advance `layout` to what they emitted, so calls
+   * chained before the parent re-renders compose; the next commit overwrites it.
+   */
   const latest = useRef({ opts, layout, onLayoutChange, onReject });
-  latest.current = { opts, layout, onLayoutChange, onReject };
+
+  // Declared first, so the effects below and anything after the commit see these props.
+  useLayoutEffect(() => {
+    latest.current = { opts, layout, onLayoutChange, onReject };
+  });
 
   useLayoutEffect(() => {
     const el = container.current!;
@@ -116,7 +135,15 @@ export function Grid(props: GridProps) {
       g.setOptions(opts); // a columns change may normalize the layout and emit
     }
     const ids = idSignature(container.current!);
-    if (ids !== lastIds.current) {
+    // A className or style change makes React rewrite the class attribute or style keys,
+    // dropping what core set imperatively; core's render restores gm-grid--narrow and the
+    // --gm-* variables (gm-grid and display: grid are rendered by React below).
+    // gm-grid--dragging, set during a drag, is not restored: a className change mid-drag
+    // drops it until the next drag (it only disables text selection / page scroll).
+    const look = lastLook.current;
+    const restyled = className !== look.className || !shallowEqual(style, look.style);
+    lastLook.current = { className, style };
+    if (ids !== lastIds.current || restyled) {
       lastIds.current = ids;
       g.refresh();
     }
@@ -130,21 +157,34 @@ export function Grid(props: GridProps) {
         const config = { columns: o.columns, maxRows: o.maxRows, mode: o.dropMode };
         // Plan on what the core renders (normalized), so maxRows holds for e.g. minH > h.
         const result = planAdd(normalizeLayout(l, o.columns), config, item, index);
-        if (result.ok) change?.(result.layout);
-        else reject?.(result.reason);
+        if (result.ok) {
+          latest.current.layout = result.layout; // a following add/remove builds on this
+          change?.(result.layout);
+        } else {
+          reject?.(result.reason);
+        }
         return result;
       },
       removeItem(id) {
         const { layout: l, onLayoutChange: change } = latest.current;
         const next = planRemove(l, id);
-        if (next !== l) change?.(next);
+        if (next === l) return;
+        latest.current.layout = next; // a following add/remove builds on this
+        change?.(next);
       },
     }),
     [],
   );
 
   return (
-    <div {...divProps} ref={container}>
+    <div
+      {...divProps}
+      // Core styles hang off gm-grid and need display: grid; rendering them here keeps them
+      // when React rewrites the class attribute or style (and applies them in SSR markup).
+      className={className ? `gm-grid ${className}` : 'gm-grid'}
+      style={{ ...style, display: 'grid' }}
+      ref={container}
+    >
       {children}
     </div>
   );
