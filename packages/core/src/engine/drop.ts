@@ -1,5 +1,4 @@
 import { computeFlow, rowsOf, totalRows } from './flow.js';
-import { layoutsEqual } from './normalize.js';
 import { shrinkRowToFit } from './shrink.js';
 import type { DropResult, DropTarget, EngineConfig, LayoutItem } from './types.js';
 
@@ -41,9 +40,6 @@ function toSlot(layout: LayoutItem[], rest: LayoutItem[], config: EngineConfig, 
   return null;
 }
 
-/** Candidates built by `shrink` mode where the target row could not be made to fit. */
-const unfittable = new WeakSet<LayoutItem[]>();
-
 /** Inserted order with the target row shrunk to fit, or null if it can't fit. */
 function shrinkInsert(rest: LayoutItem[], dragged: LayoutItem, columns: number, index: number): LayoutItem[] | null {
   if (rest.length === 0) return [dragged];
@@ -57,26 +53,29 @@ function shrinkInsert(rest: LayoutItem[], dragged: LayoutItem, columns: number, 
   if (!fitted) return null;
   const widths = new Map(fitted.map((i) => [i.id, i.w]));
   return insertAt(
-    rest.map((i) => (widths.get(i.id) === i.w ? i : { ...i, w: widths.get(i.id) ?? i.w })),
+    rest.map((i) => (widths.has(i.id) && widths.get(i.id) !== i.w ? { ...i, w: widths.get(i.id)! } : i)),
     dragged,
     index,
   );
 }
 
-/** Candidate item order for the mode, before any rule is applied. */
-function buildCandidate(rest: LayoutItem[], dragged: LayoutItem, config: EngineConfig, slot: Slot): LayoutItem[] {
+/** Candidate item order for the mode, before any rule is applied; `fits` is false when shrink could not make room. */
+function buildCandidate(
+  rest: LayoutItem[],
+  dragged: LayoutItem,
+  config: EngineConfig,
+  slot: Slot,
+): { order: LayoutItem[]; fits: boolean } {
   switch (config.mode) {
     case 'insert':
     case 'block':
       if (slot.kind !== 'index') throw new Error('unreachable: validated slot');
-      return insertAt(rest, dragged, slot.index);
+      return { order: insertAt(rest, dragged, slot.index), fits: true };
     case 'shrink': {
       if (slot.kind !== 'index') throw new Error('unreachable: validated slot');
       const shrunk = shrinkInsert(rest, dragged, config.columns, slot.index);
-      if (shrunk) return shrunk;
-      const plain = insertAt(rest, dragged, slot.index);
-      unfittable.add(plain);
-      return plain;
+      if (shrunk) return { order: shrunk, fits: true };
+      return { order: insertAt(rest, dragged, slot.index), fits: false };
     }
     case 'swap':
       throw new Error('not implemented');
@@ -85,24 +84,22 @@ function buildCandidate(rest: LayoutItem[], dragged: LayoutItem, config: EngineC
 
 /** Mode-specific acceptance rule applied to the candidate. */
 function modeAllows(
-  layout: LayoutItem[],
   rest: LayoutItem[],
   dragged: LayoutItem,
   config: EngineConfig,
   candidate: LayoutItem[],
+  fits: boolean,
 ): boolean {
   switch (config.mode) {
     case 'insert':
       return true;
     case 'block': {
-      // A no-op drop is always fine, even if removal would let later items pull up.
-      if (layoutsEqual(candidate, layout)) return true;
       const before = rowsWithout(rest, config.columns, dragged.id);
       const after = rowsWithout(candidate, config.columns, dragged.id);
       return sameRows(before, after);
     }
     case 'shrink':
-      return !unfittable.has(candidate);
+      return fits;
     case 'swap':
       throw new Error('not implemented');
   }
@@ -128,13 +125,17 @@ export function planDrop(
 
   // 2. locked: the dragged item, then every locked item must keep its index
   if (dragged.locked) return { ok: false, reason: 'locked' };
-  const candidate = buildCandidate(rest, dragged, config, slot);
+
+  // Dropping where the item already sits changes nothing, whatever the mode.
+  if (slot.kind === 'index' && layout[slot.index]?.id === dragId) return { ok: true, layout };
+
+  const { order: candidate, fits } = buildCandidate(rest, dragged, config, slot);
   if (layout.some((item, i) => item.locked && candidate[i]?.id !== item.id)) {
     return { ok: false, reason: 'locked' };
   }
 
   // 3. mode rule
-  if (!modeAllows(layout, rest, dragged, config, candidate)) return { ok: false, reason: 'no-room' };
+  if (!modeAllows(rest, dragged, config, candidate, fits)) return { ok: false, reason: 'no-room' };
 
   // 4. max-rows
   if (config.maxRows !== undefined && totalRows(computeFlow(candidate, config.columns)) > config.maxRows) {

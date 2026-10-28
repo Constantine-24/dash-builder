@@ -30,7 +30,18 @@ describe('shrink mode', () => {
   });
 });
 
+describe('shrink no-op drop', () => {
+  test('dropping at the current index leaves the layout unchanged', () => {
+    const A = [{ id: 'A', w: 1, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 2, h: 1 }, { id: 'D', w: 2, h: 1 }];
+    expect(planDrop(A, { columns: 4, mode: 'shrink' }, 'B', { index: 1 })).toEqual({ ok: true, layout: A });
+    expect(planDrop(L, { columns: 4, mode: 'shrink' }, 'B', { index: 1 })).toEqual({ ok: true, layout: L });
+  });
+});
+
 describe('shrinkRowToFit', () => {
+  test('throws when fixedId is not in the row', () => {
+    expect(() => shrinkRowToFit([{ id: 'A', w: 1, h: 1 }], 'Z', 4)).toThrow();
+  });
   const row = [{ id: 'L', w: 2, h: 1 }, { id: 'X', w: 2, h: 1 }, { id: 'R', w: 2, h: 1 }];
   test('nearest first, ties left, locked skipped', () => {
     expect(shrinkRowToFit(row, 'X', 5)!.map((i) => i.w)).toEqual([1, 2, 2]);

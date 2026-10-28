@@ -6,10 +6,11 @@ import type { LayoutItem } from './types.js';
  * on. Locked items never shrink. Returns a new array, or null if it can't fit.
  */
 export function shrinkRowToFit(row: LayoutItem[], fixedId: string, columns: number): LayoutItem[] | null {
+  const fixedAt = row.findIndex((i) => i.id === fixedId);
+  if (fixedAt < 0) throw new Error(`shrinkRowToFit: fixedId "${fixedId}" is not in the row`);
   const widths = row.map((i) => i.w);
   let excess = widths.reduce((a, b) => a + b, 0) - columns;
   if (excess > 0) {
-    const fixedAt = row.findIndex((i) => i.id === fixedId);
     const order = row
       .map((item, idx) => ({ item, idx, dist: Math.abs(idx - fixedAt) }))
       .filter(({ item }) => item.id !== fixedId && !item.locked)
