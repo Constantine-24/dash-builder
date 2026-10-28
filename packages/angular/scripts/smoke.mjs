@@ -8,7 +8,7 @@ const fail = (msg) => {
 };
 
 const mod = await import(new URL('fesm2022/grid-master-angular.mjs', dist).href);
-for (const name of ['GmWidget', 'GmHandle']) {
+for (const name of ['GmWidget', 'GmHandle', 'GmGrid']) {
   if (!(name in mod)) fail(`missing export ${name}`);
 }
 
