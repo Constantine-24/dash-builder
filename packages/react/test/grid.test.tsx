@@ -1,4 +1,4 @@
-import { StrictMode, createRef, useState } from 'react';
+import { StrictMode, Suspense, createRef, use, useState } from 'react';
 import type { CSSProperties, ReactElement, Ref } from 'react';
 import { renderToString } from 'react-dom/server';
 import { act, cleanup, render } from '@testing-library/react';
@@ -413,6 +413,195 @@ describe('Grid', () => {
     );
     expect(col('a')).toBe('1 / span 2');
   });
+});
+
+describe('Widget inside Grid', () => {
+  const handle = (id: string) => el(id)!.querySelector(':scope > .gm-resize-handle');
+
+  it('a Widget className change keeps gm-item and the placement', () => {
+    const layout = [{ id: 'a', w: 2, h: 1 }];
+    const ui = (cls?: string) => (
+      <Grid columns={4} breakpoint={0} layout={layout}>
+        <Widget id="a" className={cls}>
+          a
+        </Widget>
+      </Grid>
+    );
+    const { rerender } = mount(ui('one'));
+    expect(el('a')!.classList.contains('gm-item')).toBe(true);
+    rerender(ui('two'));
+    expect(el('a')!.classList.contains('gm-item')).toBe(true);
+    expect(el('a')!.classList.contains('two')).toBe(true);
+    expect(el('a')!.classList.contains('one')).toBe(false);
+    expect(col('a')).toBe('1 / span 2');
+    rerender(ui(undefined));
+    expect(el('a')!.classList.contains('gm-item')).toBe(true);
+    expect(el('a')!.classList.contains('two')).toBe(false);
+    expect(col('a')).toBe('1 / span 2');
+  });
+
+  it('a text child update keeps the resize handle; so does an element <-> text switch', () => {
+    const layout = [{ id: 'a', w: 1, h: 1 }];
+    const ui = (child: ReactElement | string | number) => (
+      <Grid columns={4} breakpoint={0} layout={layout}>
+        <Widget id="a">{child}</Widget>
+      </Grid>
+    );
+    const { rerender } = mount(ui('one'));
+    expect(handle('a')).not.toBeNull();
+    rerender(ui('two'));
+    expect(el('a')!.firstChild!.textContent).toBe('two');
+    expect(handle('a')).not.toBeNull();
+    rerender(ui(3));
+    expect(handle('a')).not.toBeNull();
+    rerender(ui(<p>element</p>));
+    expect(el('a')!.querySelector('p')).not.toBeNull();
+    expect(handle('a')).not.toBeNull();
+    rerender(ui('text again'));
+    expect(el('a')!.querySelector('p')).toBeNull();
+    expect(handle('a')).not.toBeNull();
+  });
+
+  it('a wrapper that mounts its Widget from its own state gets it bound and placed', async () => {
+    let show: (v: boolean) => void = () => {};
+    function Late({ id }: { id: string }) {
+      const [on, setOn] = useState(false);
+      show = setOn;
+      return on ? <Widget id={id}>{id}</Widget> : null;
+    }
+    mount(
+      <Grid columns={4} breakpoint={0} layout={SMALL}>
+        <Widget id="a">a</Widget>
+        <Late id="b" />
+      </Grid>,
+    );
+    expect(el('b')).toBeNull();
+    await act(async () => show(true));
+    expect(el('b')!.classList.contains('gm-item')).toBe(true);
+    expect(col('b')).toBe('2 / span 1');
+    expect(handle('b')).not.toBeNull();
+
+    // unmounting and remounting it from its own state binds the new element
+    await act(async () => show(false));
+    expect(el('b')).toBeNull();
+    await act(async () => show(true));
+    expect(col('b')).toBe('2 / span 1');
+    expect(handle('b')).not.toBeNull();
+  });
+
+  it('a wrapper changing its Widget id from its own state rebinds it', async () => {
+    let setId: (id: string) => void = () => {};
+    function Reid() {
+      const [id, set] = useState('x'); // not in the layout: the core hides it
+      setId = set;
+      return <Widget id={id}>{id}</Widget>;
+    }
+    mount(
+      <Grid columns={4} breakpoint={0} layout={SMALL}>
+        <Widget id="a">a</Widget>
+        <Reid />
+      </Grid>,
+    );
+    expect(el('x')!.hidden).toBe(true);
+    await act(async () => setId('b'));
+    expect(el('b')!.hidden).toBe(false);
+    expect(col('b')).toBe('2 / span 1');
+    expect(handle('b')).not.toBeNull();
+  });
+
+  it('Suspense inside the grid: the resolved widget replaces the fallback and is placed', async () => {
+    let resolve!: (v: string) => void;
+    const text = new Promise<string>((r) => (resolve = r));
+    function Loaded({ id }: { id: string }) {
+      return <Widget id={id}>{use(text)}</Widget>;
+    }
+    await act(async () => {
+      mount(
+        <Grid columns={4} breakpoint={0} layout={SMALL}>
+          <Widget id="a">a</Widget>
+          <Suspense
+            fallback={
+              <Widget id="b" className="fallback">
+                loading
+              </Widget>
+            }
+          >
+            <Loaded id="b" />
+          </Suspense>
+        </Grid>,
+      );
+    });
+    expect(el('b')!.classList.contains('fallback')).toBe(true);
+    expect(col('b')).toBe('2 / span 1');
+    await act(async () => {
+      resolve('ready');
+      await text;
+    });
+    const b = el('b')!;
+    expect(b.textContent).toBe('ready');
+    expect(b.classList.contains('fallback')).toBe(false);
+    expect(b.classList.contains('gm-item')).toBe(true);
+    expect(col('b')).toBe('2 / span 1');
+    expect(handle('b')).not.toBeNull();
+
+    // the core drags the real element, not a detached fallback
+    stubRects(['a', 'b']);
+    down(b, 158, 40);
+    move(50, 40);
+    expect(b.classList.contains('gm-item--placeholder')).toBe(true);
+    up(50, 40);
+  });
+
+  it("a widget's own text changing mid-drag doesn't disturb the drag; the drop commits", async () => {
+    let tick: () => void = () => {};
+    function Ticking({ id }: { id: string }) {
+      const [n, setN] = useState(0);
+      tick = () => setN((x) => x + 1);
+      return <Widget id={id}>{`${id} ${n}`}</Widget>;
+    }
+    const changes: LayoutItem[][] = [];
+    function Board() {
+      const [layout, setLayout] = useState(SMALL);
+      return (
+        <Grid
+          columns={4}
+          breakpoint={0}
+          dropMode="swap"
+          layout={layout}
+          onLayoutChange={(l) => {
+            changes.push(l);
+            setLayout(l);
+          }}
+        >
+          {layout.map((i) =>
+            i.id === 'b' ? (
+              <Ticking key="b" id="b" />
+            ) : (
+              <Widget key={i.id} id={i.id}>
+                {i.id}
+              </Widget>
+            ),
+          )}
+        </Grid>
+      );
+    }
+    mount(<Board />);
+    stubRects(['a', 'b']);
+    down(el('b')!, 158, 40);
+    move(120, 40); // past the threshold
+    expect(el('b')!.classList.contains('gm-item--placeholder')).toBe(true);
+    await act(async () => tick());
+    expect(el('b')!.firstChild!.textContent).toBe('b 1');
+    expect(handle('b')).not.toBeNull();
+    expect(el('b')!.classList.contains('gm-item--placeholder')).toBe(true);
+    expect(document.querySelector('.gm-ghost')).not.toBeNull();
+    move(50, 40); // over a
+    up(50, 40);
+    expect(changes.length).toBe(1);
+    expect(ids(changes[0]!)).toEqual(['b', 'a']);
+    expect(domOrder()).toEqual(['b', 'a']);
+    expect(handle('b')).not.toBeNull();
+  });
 
   it('SSR: renders to a string', () => {
     const html = renderToString(
@@ -420,6 +609,6 @@ describe('Grid', () => {
         <Widget id="a" />
       </Grid>,
     );
-    expect(html).toContain('data-grid-id="a"');
+    expect(html).toContain('class="gm-item" data-grid-id="a"');
   });
 });

@@ -14,7 +14,7 @@ it('renders a div with data-grid-id, no DOM id, and a handle span', () => {
   const div = container.firstElementChild as HTMLElement;
   expect(div.tagName).toBe('DIV');
   expect(div.getAttribute('data-grid-id')).toBe('a');
-  expect(div.classList.contains('x')).toBe(true);
+  expect(div.className).toBe('gm-item x'); // standalone too: the default context is a no-op
   expect(div.hasAttribute('id')).toBe(false);
   const span = div.firstElementChild as HTMLElement;
   expect(span.tagName).toBe('SPAN');

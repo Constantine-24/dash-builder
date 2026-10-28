@@ -1,7 +1,9 @@
-import { useImperativeHandle, useLayoutEffect, useRef } from 'react';
+import { useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
 import { addItem as planAdd, createGrid, normalizeLayout, removeItem as planRemove } from '@grid-master/core';
 import type { DropMode, DropResult, GridController, GridOptions, LayoutItem, RejectReason } from '@grid-master/core';
+import { GridContext } from './context.js';
+import type { GridContextValue } from './context.js';
 
 export interface GridProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
   columns: number;
@@ -31,16 +33,6 @@ export interface GridHandle {
   addItem(item: LayoutItem, index?: number): DropResult;
   /** Removes the item with `id`; an unknown id changes nothing and calls nothing. */
   removeItem(id: string): void;
-}
-
-/** The ids of the container's direct `data-grid-id` children, in DOM order. */
-function idSignature(container: HTMLElement): string {
-  const ids: string[] = [];
-  for (const child of Array.from(container.children)) {
-    const id = child.getAttribute('data-grid-id');
-    if (id !== null) ids.push(id);
-  }
-  return ids.join('\n');
 }
 
 function shallowEqual(a: CSSProperties | undefined, b: CSSProperties | undefined): boolean {
@@ -81,8 +73,8 @@ export function Grid(props: GridProps) {
   const applied = useRef<LayoutItem[] | undefined>(undefined);
   /** Set while setOptions runs before a new layout replaces the current one. */
   const superseded = useRef(false);
-  /** The widget ids (and order) the controller last saw. */
-  const lastIds = useRef('');
+  /** A widget committed (or unmounted) since the controller last rendered. */
+  const dirty = useRef(false);
   /** The className and style the container was last rendered with. */
   const lastLook = useRef({ className, style });
   /**
@@ -91,6 +83,28 @@ export function Grid(props: GridProps) {
    * chained before the parent re-renders compose; the next commit overwrites it.
    */
   const latest = useRef({ opts, layout, onLayoutChange, onReject });
+
+  // Widgets call this after each of their commits and when they unmount. When the Grid
+  // commits too, its sync effect below (which runs after its children's effects) refreshes
+  // at once; otherwise (a wrapper's own state, a Suspense boundary resolving) the queued
+  // microtask does, before the browser paints. Many requests make one refresh. Once the
+  // controller is destroyed (unmount), a queued refresh finds none and does nothing.
+  const [context] = useState<GridContextValue>(() => {
+    let queued = false;
+    return {
+      requestRefresh() {
+        dirty.current = true;
+        if (queued) return;
+        queued = true;
+        queueMicrotask(() => {
+          queued = false;
+          if (!dirty.current || !controller.current) return;
+          dirty.current = false;
+          controller.current.refresh();
+        });
+      },
+    };
+  });
 
   // Declared first, so the effects below and anything after the commit see these props.
   useLayoutEffect(() => {
@@ -109,15 +123,15 @@ export function Grid(props: GridProps) {
       },
       onReject: (r) => latest.current.onReject?.(r),
     });
-    lastIds.current = idSignature(el); // createGrid has bound these
+    dirty.current = false; // createGrid has bound and placed the widgets
     return () => {
       controller.current?.destroy();
       controller.current = undefined;
     };
   }, []);
 
-  // After every commit: apply options and layout, then rebind if widgets were added,
-  // removed, re-id'd or reordered. The core skips equal options and layouts.
+  // After every commit: apply options and layout, then refresh if a widget committed or the
+  // container was restyled. The core skips equal options and layouts.
   useLayoutEffect(() => {
     const g = controller.current;
     if (!g) return;
@@ -134,7 +148,6 @@ export function Grid(props: GridProps) {
     } else {
       g.setOptions(opts); // a columns change may normalize the layout and emit
     }
-    const ids = idSignature(container.current!);
     // A className or style change makes React rewrite the class attribute or style keys,
     // dropping what core set imperatively; core's render restores gm-grid--narrow and the
     // --gm-* variables (gm-grid and display: grid are rendered by React below).
@@ -143,8 +156,11 @@ export function Grid(props: GridProps) {
     const look = lastLook.current;
     const restyled = className !== look.className || !shallowEqual(style, look.style);
     lastLook.current = { className, style };
-    if (ids !== lastIds.current || restyled) {
-      lastIds.current = ids;
+    // Every widget added, removed or re-id'd commits (or unmounts) itself, so `dirty` covers
+    // what scanning the children's ids here would; a reorder needs no refresh (the core
+    // places widgets by layout order, not DOM order).
+    if (dirty.current || restyled) {
+      dirty.current = false;
       g.refresh();
     }
   });
@@ -185,7 +201,7 @@ export function Grid(props: GridProps) {
       style={{ ...style, display: 'grid' }}
       ref={container}
     >
-      {children}
+      <GridContext value={context}>{children}</GridContext>
     </div>
   );
 }
