@@ -26,16 +26,21 @@ export interface DragInteraction {
   unbind(el: HTMLElement): void;
   /** Abort any armed or active drag without changing anything. */
   cancel(): void;
+  /** Re-apply touch-action to every bound widget (handles added/removed, lock changes). Called after render. */
+  sync(): void;
 }
 
 const THRESHOLD = 4; // px the pointer must travel before a drag starts
+const LONG_PRESS_MS = 400; // touch on a handle-less widget: hold this long to arm
+const LONG_PRESS_SLOP = 8; // px of movement that aborts a pending long-press (the page scrolls instead)
 const LINE = 4; // marker line thickness in px
 const HANDLE = '[data-grid-handle]';
 
 interface Binding {
   id: string;
   onDown: (e: PointerEvent) => void;
-  touchEl: HTMLElement;
+  /** Handle element we set touch-action on, and its previous inline value. */
+  touchEl: HTMLElement | null;
   prevTouch: string;
 }
 
@@ -50,6 +55,9 @@ interface Session {
   offsetX: number;
   offsetY: number;
   narrow: boolean;
+  /** Touch on a handle-less widget: starts after a long-press instead of the move threshold. */
+  longPress: boolean;
+  pressTimer: ReturnType<typeof setTimeout> | null;
   started: boolean;
   ghost: HTMLElement | null;
   hit: Hit | null;
@@ -62,15 +70,14 @@ export function createDrag(ctx: DragContext): DragInteraction {
   const bindings = new Map<HTMLElement, Binding>();
   let s: Session | null = null;
   const doc = ctx.container.ownerDocument;
+  let bodyUserSelect = '';
 
   function bind(el: HTMLElement, id: string): void {
     unbind(el);
-    const handle = el.querySelector<HTMLElement>(HANDLE);
-    const touchEl = handle ?? el;
-    const b: Binding = { id, onDown: (e) => onDown(el, e), touchEl, prevTouch: touchEl.style.touchAction };
-    touchEl.style.touchAction = 'none';
+    const b: Binding = { id, onDown: (e) => onDown(el, e), touchEl: null, prevTouch: '' };
     el.addEventListener('pointerdown', b.onDown as EventListener);
     bindings.set(el, b);
+    syncTouch(el, b);
   }
 
   function unbind(el: HTMLElement): void {
@@ -78,8 +85,32 @@ export function createDrag(ctx: DragContext): DragInteraction {
     if (!b) return;
     if (s?.el === el) cancel();
     el.removeEventListener('pointerdown', b.onDown as EventListener);
-    b.touchEl.style.touchAction = b.prevTouch;
+    setTouchEl(b, null);
     bindings.delete(el);
+  }
+
+  /**
+   * Only an unlocked widget's handle gets `touch-action: none`. Whole widgets keep
+   * the browser default so touch scrolling works; they drag after a long-press.
+   */
+  function syncTouch(el: HTMLElement, b: Binding): void {
+    const handle = el.querySelector<HTMLElement>(HANDLE);
+    const locked = ctx.getList().find((i) => i.id === b.id)?.locked === true;
+    setTouchEl(b, handle && !locked ? handle : null);
+  }
+
+  function setTouchEl(b: Binding, next: HTMLElement | null): void {
+    if (b.touchEl === next) return;
+    if (b.touchEl) b.touchEl.style.touchAction = b.prevTouch;
+    b.touchEl = next;
+    if (next) {
+      b.prevTouch = next.style.touchAction;
+      next.style.touchAction = 'none';
+    }
+  }
+
+  function sync(): void {
+    for (const [el, b] of bindings) syncTouch(el, b);
   }
 
   function onDown(el: HTMLElement, e: PointerEvent): void {
@@ -89,7 +120,8 @@ export function createDrag(ctx: DragContext): DragInteraction {
     if (!b || !target || !el.contains(target)) return;
     const resize = target.closest('.gm-resize-handle');
     if (resize && el.contains(resize)) return;
-    if (el.querySelector(HANDLE)) {
+    const hasHandle = el.querySelector(HANDLE) !== null;
+    if (hasHandle) {
       const handle = target.closest(HANDLE);
       if (!handle || !el.contains(handle)) return;
     }
@@ -108,6 +140,8 @@ export function createDrag(ctx: DragContext): DragInteraction {
       offsetX: e.clientX - r.left,
       offsetY: e.clientY - r.top,
       narrow: ctx.isNarrow(),
+      longPress: e.pointerType === 'touch' && !hasHandle,
+      pressTimer: null,
       started: false,
       ghost: null,
       hit: null,
@@ -115,17 +149,19 @@ export function createDrag(ctx: DragContext): DragInteraction {
       swapTarget: null,
       frame: null,
     };
-    if (e.pointerId !== undefined && typeof el.setPointerCapture === 'function') {
-      try {
-        el.setPointerCapture(e.pointerId);
-      } catch {
-        // not an active pointer (synthetic event); document listeners still work
-      }
+    const cur = s;
+    if (cur.longPress) {
+      cur.pressTimer = setTimeout(() => {
+        cur.pressTimer = null;
+        if (s === cur && !cur.started) begin(cur);
+      }, LONG_PRESS_MS);
     }
+    disarmClickSwallow();
     doc.addEventListener('pointermove', onMove);
     doc.addEventListener('pointerup', onUp);
     doc.addEventListener('pointercancel', onCancel);
     doc.addEventListener('keydown', onKey);
+    doc.addEventListener('contextmenu', preventNative); // long-press menu on touch
     el.addEventListener('dragstart', preventNative);
   }
 
@@ -137,12 +173,24 @@ export function createDrag(ctx: DragContext): DragInteraction {
     s.x = e.clientX;
     s.y = e.clientY;
     if (!s.started) {
-      if (Math.hypot(s.x - s.startX, s.y - s.startY) < THRESHOLD) return;
+      const dist = Math.hypot(s.x - s.startX, s.y - s.startY);
+      if (s.longPress) {
+        if (dist > LONG_PRESS_SLOP) cleanup(); // a scroll gesture, not a drag
+        return;
+      }
+      if (dist < THRESHOLD) return;
       start(s);
     }
     e.preventDefault();
     placeGhost(s);
     schedule(s);
+  }
+
+  /** Long-press completed: start in place. */
+  function begin(cur: Session): void {
+    start(cur);
+    placeGhost(cur);
+    schedule(cur);
   }
 
   function onUp(e: PointerEvent): void {
@@ -157,13 +205,14 @@ export function createDrag(ctx: DragContext): DragInteraction {
     const plan = cur.started && cur.hit ? cur.plan : null;
     const narrow = cur.narrow;
     cleanup();
+    if (cur.started) armClickSwallow(true);
     if (!plan?.ok || layoutsEqual(plan.layout, list)) return;
     if (narrow) ctx.setNarrowOrder(plan.layout.map((i) => i.id));
     else ctx.commit(plan.layout);
   }
 
   function onCancel(e: PointerEvent): void {
-    if (samePointer(e)) cancel();
+    if (samePointer(e)) cleanup(); // the browser took the pointer: no click follows
   }
 
   function onKey(e: KeyboardEvent): void {
@@ -191,6 +240,18 @@ export function createDrag(ctx: DragContext): DragInteraction {
     cur.ghost = ghost;
     cur.el.classList.add('gm-item--placeholder');
     doc.body.appendChild(ghost);
+    if (cur.pointerId !== undefined && typeof cur.el.setPointerCapture === 'function') {
+      try {
+        cur.el.setPointerCapture(cur.pointerId);
+      } catch {
+        // not an active pointer (synthetic event); document listeners still work
+      }
+    }
+    ctx.container.classList.add('gm-grid--dragging');
+    bodyUserSelect = doc.body.style.userSelect;
+    doc.body.style.userSelect = 'none';
+    doc.addEventListener('selectstart', preventNative);
+    doc.addEventListener('touchmove', preventNative, { passive: false }); // no page scroll mid-drag
   }
 
   function placeGhost(cur: Session): void {
@@ -306,13 +367,21 @@ export function createDrag(ctx: DragContext): DragInteraction {
     doc.removeEventListener('pointerup', onUp);
     doc.removeEventListener('pointercancel', onCancel);
     doc.removeEventListener('keydown', onKey);
+    doc.removeEventListener('contextmenu', preventNative);
     cur.el.removeEventListener('dragstart', preventNative);
-    if (cur.pointerId !== undefined && typeof cur.el.releasePointerCapture === 'function') {
-      try {
-        cur.el.releasePointerCapture(cur.pointerId);
-      } catch {
-        // capture was never taken
+    if (cur.pressTimer !== null) clearTimeout(cur.pressTimer);
+    if (cur.started) {
+      if (cur.pointerId !== undefined && typeof cur.el.releasePointerCapture === 'function') {
+        try {
+          cur.el.releasePointerCapture(cur.pointerId);
+        } catch {
+          // capture was never taken
+        }
       }
+      ctx.container.classList.remove('gm-grid--dragging');
+      doc.body.style.userSelect = bodyUserSelect;
+      doc.removeEventListener('selectstart', preventNative);
+      doc.removeEventListener('touchmove', preventNative);
     }
     cur.ghost?.remove();
     cur.el.classList.remove('gm-item--placeholder');
@@ -321,9 +390,47 @@ export function createDrag(ctx: DragContext): DragInteraction {
     ctx.marker.classList.remove('gm-marker--blocked');
   }
 
+  /** Programmatic / Escape cancel. A started drag whose pointer is still down swallows the click its release makes. */
   function cancel(): void {
+    const cur = s;
     cleanup();
+    if (cur?.started) armClickSwallow(false);
   }
 
-  return { bind, unbind, cancel };
+  // ---- click suppression after a real drag --------------------------------
+  // The release of a drag must not activate buttons/links in the widget. One
+  // capture-phase click listener swallows the next click; it is dropped once it
+  // fires, on the next pointerdown, or one tick after the release.
+  let swallowArmed = false;
+  let swallowTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function swallowClick(e: Event): void {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    disarmClickSwallow();
+  }
+
+  function expireAfterRelease(): void {
+    doc.removeEventListener('pointerup', expireAfterRelease, true);
+    if (swallowArmed) swallowTimer = setTimeout(disarmClickSwallow, 0);
+  }
+
+  function armClickSwallow(released: boolean): void {
+    disarmClickSwallow();
+    swallowArmed = true;
+    doc.addEventListener('click', swallowClick, true);
+    if (released) swallowTimer = setTimeout(disarmClickSwallow, 0);
+    else doc.addEventListener('pointerup', expireAfterRelease, true);
+  }
+
+  function disarmClickSwallow(): void {
+    if (!swallowArmed) return;
+    swallowArmed = false;
+    doc.removeEventListener('click', swallowClick, true);
+    doc.removeEventListener('pointerup', expireAfterRelease, true);
+    if (swallowTimer !== null) clearTimeout(swallowTimer);
+    swallowTimer = null;
+  }
+
+  return { bind, unbind, cancel, sync };
 }

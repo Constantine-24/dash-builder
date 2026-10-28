@@ -29,11 +29,12 @@
 }
 .gm-marker[hidden] { display: none; }
 .gm-marker--blocked { background: var(--gm-marker-blocked-color); }
-.gm-marker--swap {
-  background: transparent;
-  border: 2px solid var(--gm-marker-color);
+/* While a drag is active: no text selection inside the grid. */
+.gm-grid--dragging,
+.gm-grid--dragging * {
+  -webkit-user-select: none;
+  user-select: none;
 }
-.gm-marker--swap.gm-marker--blocked { border-color: var(--gm-marker-blocked-color); }
 
 /* Controller-hidden widgets (no layout entry, or duplicate id) must beat author display rules. */
 .gm-item[hidden],

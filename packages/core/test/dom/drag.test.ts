@@ -67,9 +67,10 @@ function grid(extra: { layout?: LayoutItem[]; dropMode?: DropMode } = {}) {
   return { g, onLayoutChange };
 }
 
-const fire = (target: EventTarget, type: string, x: number, y: number) =>
-  target.dispatchEvent(new PE(type, { clientX: x, clientY: y, bubbles: true, button: 0 }));
-const down = (target: EventTarget, x: number, y: number) => fire(target, 'pointerdown', x, y);
+const fire = (target: EventTarget, type: string, x: number, y: number, init: PointerEventInit = {}) =>
+  target.dispatchEvent(new PE(type, { clientX: x, clientY: y, bubbles: true, cancelable: true, button: 0, ...init }));
+const touch = { pointerType: 'touch' } as PointerEventInit;
+const down = (target: EventTarget, x: number, y: number, init?: PointerEventInit) => fire(target, 'pointerdown', x, y, init);
 const move = (x: number, y: number) => fire(document, 'pointermove', x, y);
 const up = (x: number, y: number) => fire(document, 'pointerup', x, y);
 
@@ -80,8 +81,10 @@ beforeEach(() => {
   vi.stubGlobal('requestAnimationFrame', undefined);
   vi.stubGlobal('cancelAnimationFrame', undefined);
 });
-afterEach(() => {
+afterEach(async () => {
   vi.unstubAllGlobals();
+  // let post-drag click suppressors expire so they cannot leak into the next test
+  await new Promise((r) => setTimeout(r, 0));
 });
 
 describe('drag', () => {
@@ -227,7 +230,6 @@ describe('drag', () => {
     const { onLayoutChange } = grid();
     const handle = el('B').querySelector('[data-grid-handle]') as HTMLElement;
     expect(handle.style.touchAction).toBe('none');
-    expect(el('A').style.touchAction).toBe('none');
 
     down(el('B').querySelector('.content')!, 200, 40);
     move(30, 128);
@@ -335,5 +337,183 @@ describe('drag', () => {
     move(30, 40); // left half of A, pending
     up(30, 40);
     expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['C', 'A', 'B', 'D']);
+  });
+
+  test('removeItem mid-drag cancels: the stale plan is never committed', () => {
+    setup();
+    const { g, onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40); // left half of B
+    g.removeItem('A');
+    onLayoutChange.mockClear();
+    expect(ghost()).toBeNull();
+    move(150, 120); // would be a sticky null hit over C's placeholder
+    up(150, 120);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(order(g.getLayout())).toEqual(['B', 'C', 'D']);
+  });
+
+  test('addItem mid-drag cancels', () => {
+    setup();
+    const { g, onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    g.addItem({ id: 'E', w: 1, h: 1 });
+    onLayoutChange.mockClear();
+    expect(ghost()).toBeNull();
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('removeItem clears the temporary narrow order', () => {
+    setup(NARROW, 500);
+    const { g } = grid();
+    down(el('D'), 200, 300);
+    move(200, 20);
+    up(200, 20);
+    expect(row('D')).toBe('1 / span 1');
+    g.removeItem('B');
+    expect(row('D')).toBe('3 / span 1');
+    expect(row('A')).toBe('1 / span 1');
+  });
+
+  test('pointer capture is taken only once the drag starts', () => {
+    setup();
+    grid();
+    const cap = vi.fn();
+    el('C').setPointerCapture = cap;
+    down(el('C'), 100, 128);
+    expect(cap).not.toHaveBeenCalled();
+    move(150, 40);
+    expect(cap).toHaveBeenCalledTimes(1);
+    up(150, 40);
+  });
+
+  test('touch-action: handle only, never handle-less or locked widgets, re-evaluated on render', () => {
+    setup(WIDE, 1000, 'B');
+    const { g } = grid();
+    const handle = el('B').querySelector('[data-grid-handle]') as HTMLElement;
+    expect(handle.style.touchAction).toBe('none');
+    expect(el('A').style.touchAction).toBe('');
+    expect(el('B').style.touchAction).toBe('');
+    g.setLayout(L.map((i) => (i.id === 'B' ? { ...i, locked: true } : i)));
+    expect(handle.style.touchAction).toBe('');
+    g.setLayout(L);
+    expect(handle.style.touchAction).toBe('none');
+    // a handle added later is picked up on refresh
+    const h2 = document.createElement('span');
+    h2.setAttribute('data-grid-handle', '');
+    el('D').appendChild(h2);
+    g.refresh();
+    expect(h2.style.touchAction).toBe('none');
+    expect(el('D').style.touchAction).toBe('');
+  });
+
+  test('touch on a handle-less widget: moving 20px before 400ms does not drag', () => {
+    vi.useFakeTimers();
+    try {
+      setup();
+      const { onLayoutChange } = grid();
+      down(el('C'), 100, 128, touch);
+      vi.advanceTimersByTime(100);
+      fire(document, 'pointermove', 100, 108, touch);
+      vi.advanceTimersByTime(500);
+      expect(ghost()).toBeNull();
+      fire(document, 'pointermove', 150, 40, touch);
+      expect(ghost()).toBeNull();
+      fire(document, 'pointerup', 150, 40, touch);
+      expect(onLayoutChange).not.toHaveBeenCalled();
+    } finally {
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+    }
+  });
+
+  test('touch long-press (400ms) on a handle-less widget starts the drag; page scroll is blocked', () => {
+    vi.useFakeTimers();
+    try {
+      setup();
+      const { onLayoutChange } = grid();
+      down(el('C'), 100, 128, touch);
+      fire(document, 'pointermove', 103, 130, touch); // small jitter is fine
+      vi.advanceTimersByTime(400);
+      fire(document, 'pointermove', 150, 40, touch);
+      expect(ghost()).not.toBeNull();
+      const tm = new Event('touchmove', { bubbles: true, cancelable: true });
+      document.dispatchEvent(tm);
+      expect(tm.defaultPrevented).toBe(true);
+      fire(document, 'pointerup', 150, 40, touch);
+      expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['A', 'C', 'B', 'D']);
+      const tm2 = new Event('touchmove', { bubbles: true, cancelable: true });
+      document.dispatchEvent(tm2);
+      expect(tm2.defaultPrevented).toBe(false);
+    } finally {
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+    }
+  });
+
+  test('touch on a handle uses the 4px threshold', () => {
+    setup(WIDE, 1000, 'B');
+    grid();
+    const handle = el('B').querySelector('[data-grid-handle]') as HTMLElement;
+    down(handle, 200, 40, touch);
+    fire(document, 'pointermove', 30, 40, touch);
+    expect(ghost()).not.toBeNull();
+    fire(document, 'pointerup', 30, 40, touch);
+  });
+
+  test('text selection is suppressed during an active drag', () => {
+    setup();
+    grid();
+    down(el('C'), 100, 128);
+    const pre = new Event('selectstart', { bubbles: true, cancelable: true });
+    el('C').dispatchEvent(pre);
+    expect(pre.defaultPrevented).toBe(false);
+    move(150, 40);
+    expect(container.classList.contains('gm-grid--dragging')).toBe(true);
+    const sel = new Event('selectstart', { bubbles: true, cancelable: true });
+    el('C').dispatchEvent(sel);
+    expect(sel.defaultPrevented).toBe(true);
+    up(150, 40);
+    expect(container.classList.contains('gm-grid--dragging')).toBe(false);
+    const post = new Event('selectstart', { bubbles: true, cancelable: true });
+    el('C').dispatchEvent(post);
+    expect(post.defaultPrevented).toBe(false);
+  });
+
+  test('the click after a real drag is swallowed once; a plain click is not', async () => {
+    setup();
+    grid();
+    const onClick = vi.fn();
+    el('C').addEventListener('click', onClick);
+    down(el('C'), 100, 128);
+    move(150, 40);
+    up(150, 40);
+    el('C').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(onClick).not.toHaveBeenCalled();
+    el('C').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(onClick).toHaveBeenCalledTimes(1);
+
+    // plain click, no drag
+    down(el('C'), 100, 128);
+    up(100, 128);
+    el('C').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(onClick).toHaveBeenCalledTimes(2);
+
+    // a suppressor that never fired expires after the release tick
+    down(el('C'), 100, 128);
+    move(150, 40);
+    up(150, 40);
+    await new Promise((r) => setTimeout(r, 0));
+    el('C').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(onClick).toHaveBeenCalledTimes(3);
+  });
+
+  test('grid.css has no dead .gm-marker--swap rule', async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync('src/styles/grid.css', 'utf8');
+    expect(css).not.toContain('gm-marker--swap');
+    expect(css).toContain('.gm-grid--dragging');
   });
 });

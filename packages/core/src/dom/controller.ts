@@ -186,6 +186,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
         node.appendChild(h);
       }
     }
+    drag.sync(); // touch-action follows handles and lock state
     // keep the marker last so it never interleaves with widgets
     if (container.lastElementChild !== marker) container.appendChild(marker);
   }
@@ -222,6 +223,8 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     addItem(item, index) {
       const result = engineAddItem(layout, config(), item, index);
       if (result.ok) {
+        cancelInteraction(); // an in-flight plan was computed against the old list
+        narrowOrder = null;
         layout = result.layout;
         render();
         emit();
@@ -233,6 +236,8 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     removeItem(id) {
       const next = engineRemoveItem(layout, id);
       if (next === layout) return;
+      cancelInteraction(); // an in-flight plan was computed against the old list
+      narrowOrder = null;
       layout = next;
       render();
       emit();
