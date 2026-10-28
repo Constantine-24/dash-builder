@@ -24,7 +24,7 @@
     "build": "tsc -p tsconfig.build.json && node scripts/copy-css.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:smoke": "node scripts/smoke.mjs"
+    "test:smoke": "pnpm build && node scripts/smoke.mjs"
   },
   "devDependencies": {
     "happy-dom": "^21.0.4",

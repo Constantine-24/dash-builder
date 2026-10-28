@@ -27,7 +27,7 @@
         <option value="swap">swap</option>
       </select>
     </label>
-    <label><input type="checkbox" id="maxrows"> maxRows = 3</label>
+    <label><input type="checkbox" id="maxrows"> maxRows = 4</label>
     <button id="add">Add block</button>
     <button id="remove">Remove last</button>
   </div>
@@ -89,7 +89,9 @@
     });
 
     document.getElementById('maxrows').addEventListener('change', (e) => {
-      grid.setOptions({ maxRows: e.target.checked ? 3 : undefined });
+      // The initial layout is 4 rows tall (a, b, c: 2 rows; d: 1; e, f: 1), so with maxRows 4
+      // reorders that keep the height work and anything that would add a fifth row is refused.
+      grid.setOptions({ maxRows: e.target.checked ? 4 : undefined });
     });
 
     document.getElementById('add').addEventListener('click', () => {
