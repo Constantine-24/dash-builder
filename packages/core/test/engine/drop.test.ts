@@ -109,10 +109,11 @@ describe('planDrop: locked items are pinned to their index', () => {
     const K = [it('a'), it('L', 1, true), it('b'), it('c', 4)];
     expect(ids(planDrop(K, cfg('block'), 'a', { index: 3 }))).toEqual(['b', 'L', 'c', 'a']);
   });
-  test('block: cross-locked move that splits a row is no-room', () => {
-    // rows: a(2) L b | c(2); candidate [b, L, a, c] flows b L a(2) | c(2): {L,b,c} split
+  test('block: cross-locked move that keeps the rows as seen passes though it splits the closed-up row', () => {
+    // rows: a(2) L b | c(2); candidate [b, L, a, c] flows b L a(2) | c(2). Closed up
+    // ({L,b,c} in one row) it splits a row, but as seen (L b | c) every row is kept.
     const K = [it('a', 2), it('L', 1, true), it('b'), it('c', 2)];
-    expect(planDrop(K, cfg('block'), 'a', { index: 2 })).toEqual({ ok: false, reason: 'no-room' });
+    expect(ids(planDrop(K, cfg('block'), 'a', { index: 2 }))).toEqual(['b', 'L', 'a', 'c']);
   });
   test('block: a reorder that moves other widgets between rows is no-room', () => {
     // rows: a L(2) | b(3); candidate [b, L, a] flows b(3) | L(2) a: L and b swap rows
@@ -124,5 +125,55 @@ describe('planDrop: locked items are pinned to their index', () => {
     const K = [it('a', 2), it('L', 1, true), it('b'), it('c')];
     const r = planDrop(K, cfg('shrink'), 'c', { index: 0 });
     expect(r.ok && r.layout.map((i) => [i.id, i.w])).toEqual([['c', 1], ['L', 1], ['a', 1], ['b', 1]]);
+  });
+});
+
+describe('planDrop: block and shrink accept rows as seen or closed up', () => {
+  const it = (id: string, w = 1, extra: Partial<LayoutItem> = {}): LayoutItem => ({ id, w, h: 1, ...extra });
+  const widths = (r: DropResult) => r.ok && r.layout.map((i) => [i.id, i.w]);
+  const L2: LayoutItem[] = [it('A', 2), it('B', 2), it('C', 2), it('D', 2)];
+
+  test('block: in-row reorder is allowed', () => {
+    expect(ids(planDrop(L2, cfg('block'), 'A', { index: 1, after: true }))).toEqual(['B', 'A', 'C', 'D']);
+  });
+  test('shrink: in-row reorder shrinks nothing', () => {
+    const r = planDrop(L2, cfg('shrink'), 'A', { index: 1, after: true });
+    expect(ids(r)).toEqual(['B', 'A', 'C', 'D']);
+    expect(r.ok && r.layout.every((i) => i.w === 2)).toBe(true);
+  });
+  test('block: cross-row move whose gap is refilled is still allowed', () => {
+    expect(ids(planDrop(L2, cfg('block'), 'A', { index: 3, after: true }))).toEqual(['B', 'C', 'D', 'A']);
+  });
+  test('block: a move that changes another row is refused', () => {
+    const K = [it('A', 1), it('B', 3), it('C', 2), it('D', 2)];
+    expect(planDrop(K, cfg('block'), 'C', { index: 1 })).toEqual({ ok: false, reason: 'no-room' });
+  });
+  test('shrink: drop onto the end of the previous row shrinks that row', () => {
+    const K = [it('A', 2), it('B', 1), it('C', 2)];
+    expect(widths(planDrop(K, cfg('shrink'), 'C', { index: 2, after: true }))).toEqual([['A', 1], ['B', 1], ['C', 2]]);
+    const r = planDrop(K, cfg('insert'), 'C', { index: 2, after: true });
+    expect(r.ok && r.layout).toBe(K);
+  });
+  test('shrink: onto the end of a previous row that cannot make room is no-room, not a no-op', () => {
+    const K = [it('A', 2, { minW: 2 }), it('B', 2, { minW: 2 }), it('C', 2)];
+    expect(planDrop(K, cfg('shrink'), 'C', { index: 2, after: true })).toEqual({ ok: false, reason: 'no-room' });
+  });
+  test('locked: adjacent locked pair', () => {
+    const K = [it('A'), it('L', 1, { locked: true }), it('M', 1, { locked: true }), it('B')];
+    expect(ids(planDrop(K, cfg('insert'), 'A', { index: 3, after: true }))).toEqual(['B', 'L', 'M', 'A']);
+  });
+  test('locked: locked item last', () => {
+    const K = [it('A'), it('B'), it('L', 1, { locked: true })];
+    expect(ids(planDrop(K, cfg('insert'), 'A', { index: 2, after: true }))).toEqual(['B', 'A', 'L']);
+  });
+  test("shrink: pinning moves the dragged item off the marker's row -> no-room", () => {
+    // [x(4), L(1, locked), d(1)] flows x | L d. Drag d to index 0 (before x): rest is
+    // [x, L] and pinnedInsert gives [d, L, x] (L stays at index 1; d and x fill 0 and 2).
+    // The marker is against x, alone in its row under both baselines (as seen and
+    // closed up are both x | L). In the order d is at 0 and x at 2 with L between, so d
+    // is neither inside x's row nor directly before or after it. The order differs
+    // from the layout, so the no-op check doesn't catch it first.
+    const K = [it('x', 4), it('L', 1, { locked: true }), it('d')];
+    expect(planDrop(K, cfg('shrink'), 'd', { index: 0 })).toEqual({ ok: false, reason: 'no-room' });
   });
 });
