@@ -1,6 +1,6 @@
 import { computeFlow, stackForNarrow } from '../engine/flow.js';
 import { addItem as engineAddItem, removeItem as engineRemoveItem } from '../engine/mutate.js';
-import { normalizeLayout } from '../engine/normalize.js';
+import { layoutsEqual, normalizeLayout } from '../engine/normalize.js';
 import type { DropMode, DropResult, LayoutItem, PlacedItem, RejectReason } from '../engine/types.js';
 
 export interface GridOptions {
@@ -34,6 +34,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
   let destroyed = false;
 
   const items = new Map<string, HTMLElement>(); // widgets currently managed, by id
+  const bound = new Map<HTMLElement, string>(); // element -> id it is bound under
   const hiddenByUs = new Set<HTMLElement>();
   const prevInline = {
     display: container.style.display,
@@ -62,26 +63,49 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
   const emit = () => opts.onLayoutChange?.(layout.map((i) => ({ ...i })));
 
   function scan(): void {
-    const seen = new Set<string>();
+    const winners = new Map<string, HTMLElement>();
+    const dupes: HTMLElement[] = [];
     for (const child of Array.from(container.children)) {
       const id = child.getAttribute(ID_ATTR);
       if (id === null || !(child instanceof HTMLElement)) continue;
-      seen.add(id);
-      if (items.get(id) !== child) {
-        const old = items.get(id);
-        if (old) unbindItem(old);
-        items.set(id, child);
-        child.classList.add('gm-item');
-        bindItem(child, id);
-      }
+      if (winners.has(id)) dupes.push(child); // first in DOM order wins
+      else winners.set(id, child);
     }
-    for (const [id, node] of Array.from(items)) {
-      if (!seen.has(id) || node.parentElement !== container) {
+    const winnerEls = new Set(winners.values());
+    // release elements no longer managed (removed, now a duplicate, or id attribute dropped)
+    for (const [node, id] of Array.from(bound)) {
+      if (!winnerEls.has(node)) {
         unbindItem(node);
-        items.delete(id);
+        bound.delete(node);
         clearItem(node);
+      } else if (winners.get(id) !== node) {
+        unbindItem(node); // id attribute changed: rebound below under the new id
+        bound.delete(node);
       }
     }
+    for (const [id, node] of winners) {
+      if (bound.get(node) !== id) {
+        bound.set(node, id);
+        node.classList.add('gm-item');
+        bindItem(node, id);
+      }
+    }
+    items.clear();
+    for (const [id, node] of winners) items.set(id, node);
+    for (const node of dupes) hide(node);
+    // forget hidden-by-us elements that left the container
+    for (const node of Array.from(hiddenByUs)) if (node.parentElement !== container) unhide(node);
+  }
+
+  function hide(node: HTMLElement): void {
+    if (!node.hidden) {
+      node.hidden = true;
+      hiddenByUs.add(node);
+    }
+  }
+  // Only un-hides what the controller hid; consumer-hidden elements stay hidden.
+  function unhide(node: HTMLElement): void {
+    if (hiddenByUs.delete(node)) node.hidden = false;
   }
 
   function clearItem(node: HTMLElement): void {
@@ -89,7 +113,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     node.style.removeProperty('--gm-col');
     node.style.removeProperty('--gm-row');
     node.querySelector(':scope > .gm-resize-handle')?.remove();
-    if (hiddenByUs.delete(node)) node.hidden = false;
+    unhide(node);
   }
 
   function measureNarrow(): boolean {
@@ -109,14 +133,13 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     for (const [id, node] of items) {
       const p = byId.get(id);
       if (!p) {
-        node.hidden = true;
-        hiddenByUs.add(node);
+        hide(node);
         node.style.removeProperty('--gm-col');
         node.style.removeProperty('--gm-row');
         node.querySelector(':scope > .gm-resize-handle')?.remove();
         continue;
       }
-      if (hiddenByUs.delete(node)) node.hidden = false;
+      unhide(node);
       node.style.setProperty('--gm-col', `${p.x + 1} / span ${p.w}`);
       node.style.setProperty('--gm-row', `${p.y + 1} / span ${p.h}`);
       const handle = node.querySelector(':scope > .gm-resize-handle');
@@ -151,8 +174,14 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     setOptions(patch) {
       cancelInteraction();
       Object.assign(opts, patch);
-      if (patch.columns !== undefined) layout = normalizeLayout(layout, opts.columns);
+      let changed = false;
+      if (patch.columns !== undefined) {
+        const next = normalizeLayout(layout, opts.columns);
+        changed = !layoutsEqual(layout, next);
+        layout = next;
+      }
       render();
+      if (changed) emit();
     },
     addItem(item, index) {
       const result = engineAddItem(layout, config(), item, index);
@@ -179,10 +208,12 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       destroyed = true;
       cancelInteraction();
       observer?.disconnect();
-      for (const node of items.values()) {
+      for (const node of Array.from(bound.keys())) {
         unbindItem(node);
         clearItem(node);
       }
+      for (const node of Array.from(hiddenByUs)) unhide(node);
+      bound.clear();
       items.clear();
       marker.remove();
       container.classList.remove('gm-grid', 'gm-grid--narrow');

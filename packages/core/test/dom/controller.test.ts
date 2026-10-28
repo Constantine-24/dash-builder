@@ -104,6 +104,61 @@ describe('createGrid', () => {
     expect(g.getLayout()).toHaveLength(4);
   });
 
+  test('id attribute change on the same element keeps it managed', () => {
+    setup(['A', 'B', 'C', 'D']);
+    const g = createGrid(container, { columns: 4, layout: [...L, { id: 'Z', w: 1, h: 1 }] });
+    const a = el('A');
+    a.dataset.gridId = 'Z';
+    g.refresh();
+    expect(a.classList.contains('gm-item')).toBe(true);
+    expect(a.style.getPropertyValue('--gm-col')).toBe('1 / span 1');
+    expect(a.style.getPropertyValue('--gm-row')).toBe('3 / span 1');
+  });
+
+  test('duplicate ids: first wins, later hidden, refresh is stable; un-hidden on destroy', () => {
+    setup(['A', 'B', 'C', 'D', 'A']);
+    const g = createGrid(container, { columns: 4, layout: L });
+    const [first, dup] = Array.from(container.querySelectorAll<HTMLElement>('[data-grid-id="A"]'));
+    expect(first.hidden).toBe(false);
+    expect(first.classList.contains('gm-item')).toBe(true);
+    expect(dup.hidden).toBe(true);
+    expect(dup.classList.contains('gm-item')).toBe(false);
+    g.refresh();
+    g.refresh();
+    expect(first.hidden).toBe(false);
+    expect(dup.hidden).toBe(true);
+    g.destroy();
+    expect(dup.hidden).toBe(false);
+  });
+
+  test('consumer-hidden elements are never un-hidden by the controller', () => {
+    setup(['A', 'B', 'C', 'D', 'X']);
+    el('X').hidden = true;
+    const g = createGrid(container, { columns: 4, layout: L });
+    g.setLayout([...L, { id: 'X', w: 1, h: 1 }]);
+    expect(el('X').hidden).toBe(true);
+    g.destroy();
+    expect(el('X').hidden).toBe(true);
+  });
+
+  test('grid.css forces hidden widgets to display none', async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync('src/styles/grid.css', 'utf8');
+    expect(css).toMatch(/\.gm-item\[hidden\][^{]*\{\s*display:\s*none\s*!important/);
+  });
+
+  test('setOptions columns change that alters the layout emits it', () => {
+    setup();
+    const onLayoutChange = vi.fn();
+    const g = createGrid(container, { columns: 4, layout: L, onLayoutChange });
+    g.setOptions({ columns: 2 });
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+    const emitted = onLayoutChange.mock.calls[0][0] as LayoutItem[];
+    expect(emitted.find((i) => i.id === 'B')!.w).toBe(2);
+    g.setOptions({ columns: 3 }); // already fits: no change, no emit
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+  });
+
   test('setOptions columns re-normalizes', () => {
     setup();
     const g = createGrid(container, { columns: 4, layout: L });

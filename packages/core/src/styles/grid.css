@@ -35,6 +35,10 @@
 }
 .gm-marker--swap.gm-marker--blocked { border-color: var(--gm-marker-blocked-color); }
 
+/* Controller-hidden widgets (no layout entry, or duplicate id) must beat author display rules. */
+.gm-item[hidden],
+.gm-grid > [data-grid-id][hidden] { display: none !important; }
+
 .gm-item--placeholder {
   border: var(--gm-placeholder-border);
   background: transparent;
