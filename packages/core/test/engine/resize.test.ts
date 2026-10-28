@@ -64,6 +64,17 @@ describe('planResize', () => {
     expect(planResize(M, { columns: 4, mode: 'shrink' }, 'C', { w: 3, h: 1 })).toEqual({ ok: false, reason: 'no-room' });
   });
 
+  test('shrink resize: narrowing lets a later widget move up', () => {
+    const N: LayoutItem[] = [{ id: 'A', w: 3, h: 1 }, { id: 'B', w: 1, h: 1 }, { id: 'C', w: 2, h: 1 }];
+    const r = planResize(N, { columns: 4, mode: 'shrink' }, 'A', { w: 1, h: 1 });
+    expect(sizes(r)).toEqual([['A', 1, 1], ['B', 1, 1], ['C', 2, 1]]);
+  });
+
+  test('shrink resize: growing still refuses when a narrowed neighbour would change rows', () => {
+    const M: LayoutItem[] = [{ id: 'A', w: 3, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 2, h: 1 }];
+    expect(planResize(M, { columns: 4, mode: 'shrink' }, 'C', { w: 3, h: 1 })).toEqual({ ok: false, reason: 'no-room' });
+  });
+
   test('maxRows below the current height: a resize that keeps the height is ok, one that grows it is max-rows', () => {
     const tall: LayoutItem[] = [{ id: 'A', w: 2, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 4, h: 3 }]; // 4 rows
     const cfg4 = { columns: 4, mode: 'insert' as const, maxRows: 3 };

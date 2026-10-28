@@ -8,8 +8,8 @@ function int(value: number, min: number): number {
 /**
  * Returns a normalized copy of `items`: w, h, minW and minH are truncated to
  * integers (non-finite values become their minimum: 1, or minW/minH for w/h),
- * minW is capped to `columns`, w is clamped into [minW, columns], h is raised
- * to at least minH (and 1).
+ * minW and minH are raised to at least 1, minW is capped to `columns`,
+ * w is clamped into [minW, columns], h is raised to at least minH (and 1).
  * Optional fields absent in the input stay absent in the output.
  * Throws on duplicate ids.
  */
@@ -20,8 +20,8 @@ export function normalizeLayout(items: LayoutItem[], columns: number): LayoutIte
     seen.add(item.id);
 
     const out: LayoutItem = { ...item };
-    if (item.minW !== undefined) out.minW = Math.min(int(item.minW, 1), columns);
-    if (item.minH !== undefined) out.minH = int(item.minH, 1);
+    if (item.minW !== undefined) out.minW = Math.min(Math.max(int(item.minW, 1), 1), columns);
+    if (item.minH !== undefined) out.minH = Math.max(int(item.minH, 1), 1);
     const minW = Math.max(out.minW ?? 1, 1);
     const minH = Math.max(out.minH ?? 1, 1);
     out.w = Math.min(columns, Math.max(int(item.w, minW), minW));

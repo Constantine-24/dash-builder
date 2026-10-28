@@ -48,3 +48,9 @@ test('non-integer sizes are truncated before clamping', () => {
     { id: 'b', w: 4, h: 2, minW: 1, minH: 2 },
   ]);
 });
+
+test('normalize: minW/minH below 1 become 1', () => {
+  expect(normalizeLayout([{ id: 'a', w: 2, h: 2, minW: 0, minH: -3 }], 4)[0]).toMatchObject({ w: 2, h: 2, minW: 1, minH: 1 });
+  expect(normalizeLayout([{ id: 'a', w: 2, h: 2, minW: NaN }], 4)[0]).toMatchObject({ minW: 1 });
+  expect(normalizeLayout([{ id: 'a', w: 2, h: 2, minW: -Infinity }], 4)[0]).toMatchObject({ minW: 1 });
+});
