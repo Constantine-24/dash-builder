@@ -54,9 +54,9 @@ export class Dashboard {
 }
 ```
 
-- `<gm-grid>` is the grid container. Each projected element with `[gmWidget]="id"` is a widget; the id must match a layout entry. Widgets must be direct children of `<gm-grid>` (an `@for` block directly inside it is fine).
+- `<gm-grid>` is the grid container. Each projected element with `[gmWidget]="id"` is a widget; the id must match a layout entry. Widgets must be direct children of `<gm-grid>` (an `@for` block directly inside it is fine). Widgets rendered through `ngTemplateOutlet`, or inside a wrapper component's own template, are not direct children (Angular content projection only sees what the template using `<gm-grid>` places directly in it) and are not picked up.
 - `gmHandle` marks the only element a widget can be dragged by. Without one, the whole widget is the drag surface.
-- Render widgets from the layout with `@for (...; track item.id)`. Widgets that are added, removed, reordered or given a new id are picked up after Angular updates the DOM.
+- Render widgets from the layout with `@for (item of layout(); track item.id)`. Widgets that are added, removed, reordered or given a new id are picked up after Angular updates the DOM. Don't use `track item` (object identity): the grid emits copies of the items, so every widget would be destroyed and recreated after each drop.
 
 ## API
 
@@ -72,6 +72,8 @@ export class Dashboard {
 | `gap` | `number` | `8` | Gap between cells in px. |
 | `breakpoint` | `number` | `640` | Container width in px below which the narrow view is used. |
 | `ghost` | `(el: HTMLElement) => HTMLElement` | sanitized clone | Builds the drag ghost (see the core README). |
+
+The numeric inputs (`columns`, `maxRows`, `rowHeight`, `gap`, `breakpoint`) also accept static attributes, e.g. `columns="4"`.
 
 | Output | Payload | When |
 | --- | --- | --- |
