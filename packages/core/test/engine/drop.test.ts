@@ -45,6 +45,21 @@ describe('planDrop insert/block', () => {
     expect(planDrop(K, cfg('insert'), 'A', { index: 2 })).toEqual({ ok: false, reason: 'locked' });
     expect(ids(planDrop(K, cfg('insert'), 'D', { index: 2 }))).toEqual(['A', 'B', 'D', 'C']);
   });
+  test('block: locked is reported before no-room', () => {
+    // B is locked at index 1; dragging C to index 1 shifts B and also fails the block rule.
+    const K = L.map((i) => (i.id === 'B' ? { ...i, locked: true } : i));
+    expect(planDrop(K, cfg('block'), 'C', { index: 1 })).toEqual({ ok: false, reason: 'locked' });
+  });
+  test('block: no-op drop onto own position is allowed even if later items could pull up', () => {
+    const X: LayoutItem[] = [
+      { id: 'A', w: 2, h: 1 },
+      { id: 'X', w: 2, h: 1 },
+      { id: 'B', w: 2, h: 1 },
+      { id: 'C', w: 2, h: 1 },
+    ];
+    const r = planDrop(X, cfg('block'), 'X', { index: 1 });
+    expect(r.ok && layoutsEqual(r.layout, X)).toBe(true);
+  });
   test('maxRows rejects overflow', () => {
     expect(planDrop(L, cfg('insert', 2), 'C', { index: 1 })).toEqual({ ok: false, reason: 'max-rows' });
   });
