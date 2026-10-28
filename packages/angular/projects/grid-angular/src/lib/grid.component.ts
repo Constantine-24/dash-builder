@@ -15,7 +15,7 @@ import {
   output,
   untracked,
 } from '@angular/core';
-import { addItem as planAdd, createGrid, removeItem as planRemove } from '@grid-master/core';
+import { addItem as planAdd, createGrid, normalizeLayout, removeItem as planRemove } from '@grid-master/core';
 import type { DropMode, DropResult, GridController, GridOptions, LayoutItem, RejectReason } from '@grid-master/core';
 import { GmWidget } from './widget.directive';
 
@@ -44,6 +44,10 @@ export class GmGrid {
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly widgets = contentChildren(GmWidget);
   private grid?: GridController;
+  /** The layout last handed to the controller. */
+  private applied?: LayoutItem[];
+  /** Set while setOptions runs before a new layout replaces the current one. */
+  private superseded = false;
 
   private readonly options = computed(() => ({
     columns: this.columns(),
@@ -57,11 +61,14 @@ export class GmGrid {
 
   constructor() {
     afterNextRender(() => {
+      const layout = (this.applied = untracked(this.layout));
       this.grid = this.zone.runOutsideAngular(() =>
         createGrid(this.host, {
           ...untracked(this.options),
-          layout: untracked(this.layout),
-          onLayoutChange: (l) => this.zone.run(() => this.layout.set(l)),
+          layout,
+          onLayoutChange: (l) => {
+            if (!this.superseded) this.zone.run(() => this.layout.set(l));
+          },
           onReject: (r) => this.zone.run(() => this.reject.emit(r)),
         }),
       );
@@ -71,19 +78,31 @@ export class GmGrid {
       this.grid = undefined;
     });
 
-    // Every controller call binds or unbinds DOM listeners, so all of them run outside the zone.
+    // Options and layout in one effect, so a columns change and a new layout from the
+    // same tick are applied together. Every controller call binds or unbinds DOM
+    // listeners, so all of them run outside the zone.
     effect(() => {
       const opts = this.options();
-      this.outside((g) => g.setOptions(opts));
-    });
-    // No-op on the echo of our own layoutChange: the core skips equal layouts.
-    effect(() => {
       const layout = this.layout();
-      this.outside((g) => g.setLayout(layout));
+      this.outside((g) => {
+        if (layout === this.applied) {
+          g.setOptions(opts); // a columns change may normalize the layout and emit
+          return;
+        }
+        this.applied = layout;
+        // The layout re-normalized for new columns is about to be replaced: don't emit it.
+        this.superseded = true;
+        try {
+          g.setOptions(opts);
+        } finally {
+          this.superseded = false;
+        }
+        g.setLayout(layout); // normalized against the new columns; no-op on our own echo
+      });
     });
     // After the DOM update: bind added, re-id'd or reordered widgets, release removed ones.
     afterRenderEffect(() => {
-      this.widgets().map((w) => w.gmWidget());
+      this.widgets().forEach((w) => w.gmWidget()); // tracks every widget id
       this.outside((g) => g.refresh());
     });
   }
@@ -94,7 +113,8 @@ export class GmGrid {
    */
   addItem(item: LayoutItem, index?: number): DropResult {
     const config = { columns: this.columns(), maxRows: this.maxRows(), mode: this.dropMode() };
-    const result = planAdd(this.layout(), config, item, index);
+    // Plan on what the core renders (normalized), so maxRows holds for e.g. minH > h.
+    const result = planAdd(normalizeLayout(this.layout(), config.columns), config, item, index);
     if (result.ok) this.layout.set(result.layout);
     else this.reject.emit(result.reason);
     return result;

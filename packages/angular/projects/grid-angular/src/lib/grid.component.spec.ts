@@ -153,6 +153,47 @@ describe('gm-grid', () => {
     expect(col(f, 'a')).toBe('1 / span 2');
   });
 
+  it('a columns change and a new layout in the same tick keep the new layout', async () => {
+    const f = await create(Host);
+    const h = f.componentInstance;
+    h.layout.set([{ id: 'a', w: 3, h: 1 }]);
+    await f.whenStable();
+    h.layout.set([{ id: 'b', w: 1, h: 1 }]);
+    h.cols.set(2);
+    await f.whenStable();
+    expect(ids(h.layout())).toEqual(['b']);
+    expect(h.changes).toEqual([]);
+    expect(el(f, 'a')).toBeNull();
+    expect(col(f, 'b')).toBe('1 / span 1');
+  });
+
+  it('growing columns with a wider new layout in the same tick uses the new column count', async () => {
+    const f = await create(Host);
+    const h = f.componentInstance;
+    h.cols.set(2);
+    h.layout.set([{ id: 'a', w: 2, h: 1 }]);
+    await f.whenStable();
+    h.layout.set([{ id: 'a', w: 3, h: 1 }]);
+    h.cols.set(4);
+    await f.whenStable();
+    expect(col(f, 'a')).toBe('1 / span 3');
+    expect(h.changes).toEqual([]);
+  });
+
+  it('addItem enforces maxRows against the normalized layout (minH > h)', async () => {
+    const f = await create(Host);
+    const h = f.componentInstance;
+    h.maxRows.set(3);
+    h.layout.set([{ id: 'a', w: 4, h: 1, minH: 3 }]); // renders 3 rows tall
+    await f.whenStable();
+    const before = h.layout();
+    expect(h.grid().addItem({ id: 'z', w: 1, h: 1 })).toEqual({ ok: false, reason: 'max-rows' });
+    await f.whenStable();
+    expect(h.rejects).toEqual(['max-rows']);
+    expect(h.layout()).toBe(before);
+    expect(h.changes).toEqual([]);
+  });
+
   it('drag works end to end, and again after @for reorders the DOM', async () => {
     const f = await create(Host);
     const h = f.componentInstance;
@@ -210,6 +251,8 @@ describe('gm-grid', () => {
   it('core runs outside the Angular zone', async () => {
     const spy = vi.spyOn(TestBed.inject(NgZone), 'runOutsideAngular');
     await create(Host);
-    expect(spy).toHaveBeenCalled();
+    // createGrid itself is the body of one of the calls: that call returns the controller
+    const returned = spy.mock.results.map((r) => r.value as { setLayout?: unknown } | undefined);
+    expect(returned.some((v) => typeof v?.setLayout === 'function')).toBe(true);
   });
 });
