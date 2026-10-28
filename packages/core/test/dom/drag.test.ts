@@ -649,6 +649,86 @@ describe('drag', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  test('ghost option: its element is used as the ghost, positioned and sized by the grid; settable via setOptions', () => {
+    setup();
+    const custom = document.createElement('section');
+    const hook = vi.fn(() => custom);
+    const g = createGrid(container, { columns: 4, layout: L });
+    g.setOptions({ ghost: hook });
+    down(el('C'), 100, 128);
+    move(150, 40);
+    expect(hook).toHaveBeenCalledWith(el('C'));
+    expect(ghost()).toBe(custom);
+    expect(custom.classList.contains('gm-ghost')).toBe(true);
+    expect(custom.style.position).toBe('fixed');
+    expect(custom.style.width).toBe('208px');
+    expect(custom.style.left).toBe('50px');
+    up(150, 40);
+    expect(custom.isConnected).toBe(false);
+  });
+
+  test('default ghost: ids and radio names stripped, media replaced by sized boxes, canvas copied', () => {
+    setup();
+    const c = el('C');
+    c.id = 'widget-c';
+    c.insertAdjacentHTML(
+      'beforeend',
+      '<label id="lbl" for="r1">x</label><input type="radio" name="pick" id="r1"><input type="text" name="q">' +
+        '<iframe></iframe><video></video><audio></audio><canvas width="10" height="10"></canvas>',
+    );
+    const frame = c.querySelector('iframe')!;
+    frame.getBoundingClientRect = () => rect({ left: 0, top: 0, right: 120, bottom: 60 });
+    const canvas = c.querySelector('canvas')!;
+    const drawImage = vi.fn();
+    const proto = Object.getPrototypeOf(canvas) as HTMLCanvasElement;
+    const spy = vi.spyOn(proto, 'getContext').mockImplementation(function () {
+      return { drawImage } as unknown as CanvasRenderingContext2D;
+    } as never);
+    try {
+      grid();
+      down(c, 100, 128);
+      move(150, 40);
+      const g = ghost() as HTMLElement;
+      expect(g.hasAttribute('id')).toBe(false);
+      expect(g.querySelector('[id]')).toBeNull();
+      expect((g.querySelector('input[type="radio"]') as HTMLInputElement).hasAttribute('name')).toBe(false);
+      expect((g.querySelector('input[type="text"]') as HTMLInputElement).name).toBe('q');
+      expect(g.querySelector('iframe, video, audio')).toBeNull();
+      const boxes = g.querySelectorAll(':scope > div:not(.gm-resize-handle)');
+      expect(boxes.length).toBe(3);
+      expect((boxes[0] as HTMLElement).style.width).toBe('120px');
+      expect((boxes[0] as HTMLElement).style.height).toBe('60px');
+      expect(drawImage).toHaveBeenCalledWith(canvas, 0, 0);
+      up(150, 40);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  test('default ghost: a canvas that cannot be copied is left blank', () => {
+    setup();
+    el('C').insertAdjacentHTML('beforeend', '<canvas width="10" height="10"></canvas>');
+    const proto = Object.getPrototypeOf(el('C').querySelector('canvas')) as HTMLCanvasElement;
+    const spy = vi.spyOn(proto, 'getContext').mockImplementation(() => {
+      throw new Error('tainted');
+    });
+    try {
+      grid();
+      down(el('C'), 100, 128);
+      move(150, 40);
+      expect((ghost() as HTMLElement).querySelector('canvas')).not.toBeNull();
+      up(150, 40);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  test('grid.css: the ghost opacity variable has a fallback (the ghost lives on body)', async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync('src/styles/grid.css', 'utf8');
+    expect(css).toMatch(/\.gm-ghost\s*{[^}]*opacity:\s*var\(--gm-ghost-opacity,\s*0\.85\)/);
+  });
+
   test('grid.css has no dead .gm-marker--swap rule', async () => {
     const { readFileSync } = await import('node:fs');
     const css = readFileSync('src/styles/grid.css', 'utf8');

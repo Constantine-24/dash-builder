@@ -15,6 +15,12 @@ export interface GridOptions {
   breakpoint?: number; // px, default 640
   onLayoutChange?: (layout: LayoutItem[]) => void;
   onReject?: (reason: RejectReason) => void; // called when addItem is refused
+  /**
+   * Builds the drag ghost from the widget element. The grid adds `gm-ghost`,
+   * positions and sizes it, appends it to body and removes it on drop. Default:
+   * a sanitized deep clone (see README).
+   */
+  ghost?: (el: HTMLElement) => HTMLElement;
 }
 
 export interface GridController {
@@ -89,6 +95,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       render();
     },
     isBusy: () => resize.isActive(),
+    ghost: () => opts.ghost,
   });
   const resize = createResize({
     container,

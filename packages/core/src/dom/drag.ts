@@ -22,6 +22,8 @@ export interface DragContext {
   setNarrowOrder(ids: string[]): void;
   /** Another interaction (resize) is active: refuse to arm. */
   isBusy(): boolean;
+  /** Consumer ghost factory (GridOptions.ghost), read when a drag starts; undefined = default clone. */
+  ghost(): ((el: HTMLElement) => HTMLElement) | undefined;
 }
 
 export interface DragInteraction {
@@ -73,6 +75,41 @@ interface Session {
   frame: number | null;
   /** Undoes selection / scroll suppression; set once the drag starts. */
   release: (() => void) | null;
+}
+
+/**
+ * Deep clone of the widget, made safe to sit in the document next to it: no ids
+ * (no duplicates, no data-grid-id), radio buttons lose `name` (a cloned checked
+ * radio would uncheck the original), iframe/video/audio become empty boxes of the
+ * same rendered size (no reload, no second playback), canvases get the
+ * original's pixels when readable (tainted or unsupported: left blank).
+ */
+export function defaultGhost(el: HTMLElement): HTMLElement {
+  const ghost = el.cloneNode(true) as HTMLElement;
+  ghost.removeAttribute('data-grid-id');
+  ghost.removeAttribute('id');
+  for (const node of Array.from(ghost.querySelectorAll('[id]'))) node.removeAttribute('id');
+  for (const radio of Array.from(ghost.querySelectorAll('input[type="radio" i]'))) radio.removeAttribute('name');
+
+  const media = 'iframe, video, audio';
+  const originals = el.querySelectorAll<HTMLElement>(media);
+  ghost.querySelectorAll<HTMLElement>(media).forEach((copy, i) => {
+    const r = originals[i]!.getBoundingClientRect();
+    const box = el.ownerDocument.createElement('div');
+    box.style.width = `${r.width}px`;
+    box.style.height = `${r.height}px`;
+    copy.replaceWith(box);
+  });
+
+  const sources = el.querySelectorAll('canvas');
+  ghost.querySelectorAll('canvas').forEach((copy, i) => {
+    try {
+      copy.getContext('2d')?.drawImage(sources[i]!, 0, 0);
+    } catch {
+      // tainted or unsupported canvas: leave the copy blank
+    }
+  });
+  return ghost;
 }
 
 export function createDrag(ctx: DragContext): DragInteraction {
@@ -236,9 +273,8 @@ export function createDrag(ctx: DragContext): DragInteraction {
   function start(cur: Session): void {
     cur.started = true;
     const r = cur.el.getBoundingClientRect();
-    const ghost = cur.el.cloneNode(true) as HTMLElement;
-    ghost.removeAttribute('data-grid-id');
-    ghost.removeAttribute('id');
+    const make = ctx.ghost();
+    const ghost = make ? make(cur.el) : defaultGhost(cur.el);
     ghost.classList.add('gm-ghost');
     Object.assign(ghost.style, {
       position: 'fixed',
