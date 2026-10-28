@@ -1,5 +1,14 @@
-import { Component, NgZone, Type, signal, viewChild } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  Component,
+  Injector,
+  NgZone,
+  Type,
+  afterEveryRender,
+  provideZoneChangeDetection,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { ComponentFixture, ComponentFixtureAutoDetect, TestBed } from '@angular/core/testing';
 import type { DropMode, LayoutItem, RejectReason } from '@grid-master/core';
 import { GmGrid } from './grid.component';
 import { GmWidget } from './widget.directive';
@@ -254,5 +263,52 @@ describe('gm-grid', () => {
     // createGrid itself is the body of one of the calls: that call returns the controller
     const returned = spy.mock.results.map((r) => r.value as { setLayout?: unknown } | undefined);
     expect(returned.some((v) => typeof v?.setLayout === 'function')).toBe(true);
+  });
+});
+
+// zone.js is loaded for the whole suite by the unit-test builder (it is a devDependency);
+// test-providers.ts keeps the other specs zoneless, this block opts into zone change detection.
+describe('gm-grid with zone.js', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideZoneChangeDetection(), { provide: ComponentFixtureAutoDetect, useValue: true }],
+    });
+  });
+
+  it('pointermoves during a drag run outside the zone and tick nothing; the drop emits', async () => {
+    const f = await create(Host);
+    const h = f.componentInstance;
+    const zone = TestBed.inject(NgZone);
+    const settle = () => new Promise((r) => setTimeout(r, 0)); // let anything scheduled run
+    let entered = 0; // Angular-zone entries
+    let ticks = 0; // application ticks (afterEveryRender runs once per ApplicationRef tick)
+    const sub = zone.onUnstable.subscribe(() => entered++);
+    afterEveryRender(() => ticks++, { injector: TestBed.inject(Injector) });
+
+    // positive control (a real zone, not the zoneless no-op): work inside the zone ticks the app
+    zone.run(() => {});
+    await settle();
+    expect(entered).toBe(1);
+    expect(ticks).toBe(1);
+
+    entered = 0;
+    ticks = 0;
+    stubRects(f, ['a', 'b']);
+    down(el(f, 'a')!, 50, 40);
+    move(80, 40);
+    move(120, 40);
+    move(158, 40); // over b
+    expect(document.querySelector('.gm-ghost')).not.toBeNull();
+    await settle();
+    expect(entered).toBe(0);
+    expect(ticks).toBe(0);
+
+    up(158, 40);
+    await f.whenStable();
+    expect(entered).toBeGreaterThan(0);
+    expect(ticks).toBeGreaterThan(0);
+    expect(h.changes.length).toBe(1);
+    expect(ids(h.changes[0]!)).toEqual(['b', 'a']);
+    sub.unsubscribe();
   });
 });

@@ -27,7 +27,8 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/grid-angular/tsconfig.spec.json"
+            "tsConfig": "projects/grid-angular/tsconfig.spec.json",
+            "providersFile": "projects/grid-angular/test-providers.ts"
           }
         }
       }
