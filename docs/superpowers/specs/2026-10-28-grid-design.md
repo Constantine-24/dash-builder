@@ -126,6 +126,13 @@ v1 is a success when it can **replace the grid in one of the author's real dashb
 - Shrink-to-fit: neighbors in the target row shrink **nearest first**, one column at a time, down to their `minW`. The dropped widget keeps its size. If the row still can't fit, the drop is **blocked** (as in Block mode). Shrunk widgets **don't grow back** automatically.
 - Resize in Swap mode behaves like Block.
 - Locked widgets are pinned to their list index; unlocked widgets reorder freely around them (a drop may cross a locked widget). *(Author's decision, 2026-10-28; earlier: a drop that changed a locked widget's index was refused.)*
+- **Which rows "must not change"** in Block and Shrink to fit *(author approved my recommendation, 2026-10-28)*: a drop is allowed when every other widget keeps its row either as the user sees it now (dragged widget still in place) or as it would be with the dragged widget's old spot closed up. The as-seen view is tried first, so moving a widget within its own row never shrinks or refuses anything when it fits. Shrink to fit also honours a drop onto the end of the previous row: that row is shrunk to take the widget.
+- **Shrink-to-fit resize** only checks other rows when a neighbour was actually narrowed; making a widget smaller behaves like Insert (later widgets may move up). *(Approved 2026-10-28.)*
+- **Marker next to a locked widget** is drawn where the widget will actually land, not where the pointer is. *(Approved 2026-10-28.)*
+- **Autoscroll:** during a drag or resize, moving the pointer near the top or bottom edge of the scrolling area scrolls it. *(Approved 2026-10-28.)*
+- **Form controls don't start drags:** in a widget without a handle, pressing on a button, link, input, select, textarea, label, editable content or anything marked `data-grid-no-drag` never starts a drag. *(Approved 2026-10-28.)*
+- **Minimum sizes** below 1 are raised to 1. *(Approved 2026-10-28.)*
+- **Angular wrapper shape** *(my call)*: `<gm-grid [columns] [(layout)] dropMode ...>` with a `gmWidget` directive (so it can sit on any element, such as `mat-card` or the app's own components) and a `gmHandle` directive. Built and tested against Angular 22, the current release; the supported version range can widen once the real dashboard's version is known.
 - Mobile stacking follows list order; the breakpoint has a **sensible default**, overridable by the developer.
 - **Pragmatic drag and drop** is the leading candidate for the drag mechanics (agnostic core, closest-edge detection, drop indicator), but the builder may choose another approach if it doesn't deliver the required feel.
 
