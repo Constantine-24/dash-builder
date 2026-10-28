@@ -8,6 +8,7 @@ if (!existsSync(new URL('../dist/index.js', import.meta.url))) {
 }
 
 const mod = await import('@grid-master/react');
+assert.equal(typeof mod.Grid, 'function', 'Grid should be a function');
 assert.equal(typeof mod.Widget, 'function', 'Widget should be a function');
 assert.equal(typeof mod.WidgetHandle, 'function', 'WidgetHandle should be a function');
 assert.equal(mod.Widget.Handle, mod.WidgetHandle, 'Widget.Handle should be WidgetHandle');
@@ -21,4 +22,4 @@ assert.deepEqual(
 );
 assert.equal(pkg.dependencies, undefined, 'there should be no runtime dependencies');
 assert.ok(existsSync(new URL('../LICENSE', import.meta.url)), 'LICENSE should exist');
-console.log('smoke ok: Widget, WidgetHandle, Widget.Handle, peers, LICENSE');
+console.log('smoke ok: Grid, Widget, WidgetHandle, Widget.Handle, peers, LICENSE');
