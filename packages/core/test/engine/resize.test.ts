@@ -70,9 +70,20 @@ describe('planResize', () => {
     expect(sizes(r)).toEqual([['A', 1, 1], ['B', 1, 1], ['C', 2, 1]]);
   });
 
-  test('shrink resize: growing still refuses when a narrowed neighbour would change rows', () => {
-    const M: LayoutItem[] = [{ id: 'A', w: 3, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 2, h: 1 }];
-    expect(planResize(M, { columns: 4, mode: 'shrink' }, 'C', { w: 3, h: 1 })).toEqual({ ok: false, reason: 'no-room' });
+  test('shrink resize: growing narrows a neighbour when other rows are unchanged', () => {
+    const N: LayoutItem[] = [{ id: 'A', w: 1, h: 1 }, { id: 'B', w: 2, h: 1 }, { id: 'C', w: 1, h: 1 }, { id: 'D', w: 4, h: 1 }];
+    const r = planResize(N, { columns: 4, mode: 'shrink' }, 'A', { w: 2, h: 1 });
+    expect(sizes(r)).toEqual([['A', 2, 1], ['B', 1, 1], ['C', 1, 1], ['D', 4, 1]]);
+  });
+
+  test('shrink resize: a widen that fits narrows nobody', () => {
+    const N: LayoutItem[] = [{ id: 'A', w: 1, h: 1 }, { id: 'B', w: 1, h: 1 }, { id: 'C', w: 1, h: 1 }];
+    expect(sizes(planResize(N, { columns: 4, mode: 'shrink' }, 'A', { w: 2, h: 1 })))
+      .toEqual([['A', 2, 1], ['B', 1, 1], ['C', 1, 1]]);
+  });
+
+  test('shrink resize: a height-only change is ok', () => {
+    expect(sizes(rz('shrink', 'B', 3, 2))).toContainEqual(['B', 3, 2]);
   });
 
   test('maxRows below the current height: a resize that keeps the height is ok, one that grows it is max-rows', () => {
