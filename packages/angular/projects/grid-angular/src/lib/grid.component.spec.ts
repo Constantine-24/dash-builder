@@ -39,6 +39,19 @@ class ReIdHost {
   readonly layout = signal<LayoutItem[]>([{ id: 'b', w: 1, h: 1 }]);
 }
 
+@Component({
+  imports: [GmGrid, GmWidget],
+  template: `<gm-grid columns="2" maxRows="3" rowHeight="50" gap="4" breakpoint="0" [(layout)]="layout">@for (i of layout(); track i.id) {<div [gmWidget]="i.id">{{ i.id }}</div>}</gm-grid>`,
+})
+class StaticAttrHost {
+  readonly grid = viewChild.required(GmGrid);
+  readonly layout = signal<LayoutItem[]>([
+    { id: 'a', w: 1, h: 1 },
+    { id: 'b', w: 1, h: 1 },
+    { id: 'c', w: 1, h: 1 },
+  ]);
+}
+
 type Box = { left: number; top: number; right: number; bottom: number };
 const PE: typeof MouseEvent = typeof PointerEvent !== 'undefined' ? PointerEvent : MouseEvent;
 
@@ -92,6 +105,19 @@ describe('gm-grid', () => {
     expect(host(f).classList.contains('gm-grid')).toBe(true);
     expect(col(f, 'a')).toBe('1 / span 2');
     expect(col(f, 'b')).toBe('3 / span 1');
+  });
+
+  it('numeric inputs accept static attributes; maxRows stays undefined when bound to undefined', async () => {
+    const f = await create(StaticAttrHost);
+    const g = f.componentInstance.grid();
+    expect([g.columns(), g.maxRows(), g.rowHeight(), g.gap(), g.breakpoint()]).toEqual([2, 3, 50, 4, 0]);
+    expect(host(f).style.getPropertyValue('--gm-columns')).toBe('2');
+    expect(host(f).style.getPropertyValue('--gm-row-height')).toBe('50px');
+    expect(host(f).style.getPropertyValue('--gm-gap')).toBe('4px');
+    expect(col(f, 'c')).toBe('1 / span 1'); // wraps at 2 columns
+
+    const unset = await create(Host);
+    expect(unset.componentInstance.grid().maxRows()).toBeUndefined();
   });
 
   it('setting layout from outside re-renders without emitting', async () => {

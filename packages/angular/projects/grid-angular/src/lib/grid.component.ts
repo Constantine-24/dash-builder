@@ -12,12 +12,18 @@ import {
   inject,
   input,
   model,
+  numberAttribute,
   output,
   untracked,
 } from '@angular/core';
 import { addItem as planAdd, createGrid, normalizeLayout, removeItem as planRemove } from '@grid-master/core';
 import type { DropMode, DropResult, GridController, GridOptions, LayoutItem, RejectReason } from '@grid-master/core';
 import { GmWidget } from './widget.directive';
+
+/** `numberAttribute`, but unset (`undefined`, `null` or an empty attribute) stays `undefined`. */
+function optionalNumber(value: unknown): number | undefined {
+  return value == null || value === '' ? undefined : numberAttribute(value);
+}
 
 /**
  * A dashboard grid around the `@grid-master/core` controller. The host element is
@@ -30,12 +36,12 @@ import { GmWidget } from './widget.directive';
 })
 export class GmGrid {
   readonly layout = model.required<LayoutItem[]>();
-  readonly columns = input.required<number>();
+  readonly columns = input.required<number, unknown>({ transform: numberAttribute });
   readonly dropMode = input<DropMode>('insert');
-  readonly maxRows = input<number | undefined>();
-  readonly rowHeight = input(80);
-  readonly gap = input(8);
-  readonly breakpoint = input(640);
+  readonly maxRows = input<number | undefined, unknown>(undefined, { transform: optionalNumber });
+  readonly rowHeight = input<number, unknown>(80, { transform: numberAttribute });
+  readonly gap = input<number, unknown>(8, { transform: numberAttribute });
+  readonly breakpoint = input<number, unknown>(640, { transform: numberAttribute });
   readonly ghost = input<GridOptions['ghost']>();
 
   readonly reject = output<RejectReason>();
