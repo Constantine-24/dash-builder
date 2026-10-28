@@ -277,6 +277,17 @@ describe('drag', () => {
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
 
+  test('insert mode: dragging D before A, past locked B, keeps B at index 1 and emits D,B,A,C', () => {
+    setup();
+    const { onLayoutChange } = grid({ layout: L.map((i) => (i.id === 'B' ? { ...i, locked: true } : i)) });
+    down(el('D'), 300, 128);
+    move(30, 40);
+    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+    up(30, 40);
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['D', 'B', 'A', 'C']);
+  });
+
   test('with [data-grid-handle], only the handle starts a drag', () => {
     setup(WIDE, 1000, 'B');
     const { onLayoutChange } = grid();

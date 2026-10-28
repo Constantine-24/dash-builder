@@ -97,7 +97,7 @@ interface LayoutItem {
   h: number;        // height in rows, at least minH ?? 1
   minW?: number;
   minH?: number;
-  locked?: boolean; // cannot be dragged or resized, and keeps its position in the order
+  locked?: boolean; // cannot be dragged or resized, and stays pinned to its index in the order
 }
 ```
 
@@ -118,7 +118,7 @@ The array order is the flow order: items fill each row left to right and wrap wh
 - `shrink`: the widgets of the row the marker is on are narrowed (nearest first, down to their `minW`) to make room. The drop is refused if they cannot fit, or if shrinking would move any widget into a different row (for example a narrowed neighbour jumping onto the row above). Resizing in this mode follows the same rule.
 - `swap`: the dragged widget trades places with the widget it is dropped on.
 
-In every mode a locked widget keeps its place in the order and a drop that would break that is refused. With `maxRows`, a drop, resize or `addItem` is refused when the result needs more rows than both `maxRows` and the current layout. A layout that is already taller than `maxRows` (for example after lowering it) can still be rearranged as long as it doesn't grow. Refused drops show the marker in the blocked colour and change nothing. Nothing else moves during a drag: only a marker (or, in swap mode, an outline on the target) shows where the widget will land, and `onLayoutChange` fires once on drop.
+Locked widgets are pinned to their index in the list; unlocked widgets reorder freely around them. In insert, block and shrink mode you can drop a widget on the other side of a locked one: the dragged widget takes its place among the unlocked widgets, and the unlocked widgets fill the slots the locked ones leave free. For example, with `[a, L, b]` and `L` locked, dragging `a` to the end gives `[b, L, a]`. Pointing between a locked widget and the widget being dragged can map back to the dragged widget's own slot; that drop changes nothing. Block and shrink still apply their row rules to the result (block: every other widget stays in its row, though it may change sides of a locked widget within the row; shrink: the widget must land in the marker's row). A locked widget can't be dragged, and in swap mode it can't be swapped with. With `maxRows`, a drop, resize or `addItem` is refused when the result needs more rows than both `maxRows` and the current layout. A layout that is already taller than `maxRows` (for example after lowering it) can still be rearranged as long as it doesn't grow. Refused drops show the marker in the blocked colour and change nothing. Nothing else moves during a drag: only a marker (or, in swap mode, an outline on the target) shows where the widget will land, and `onLayoutChange` fires once on drop.
 
 The engine is also exported for use without the DOM: `planDrop`, `planResize`, `addItem`, `removeItem`, `normalizeLayout`, `layoutsEqual`, `computeFlow`, `rowsOf`, `totalRows`, `stackForNarrow`, and the types `LayoutItem`, `PlacedItem`, `DropMode`, `EngineConfig`, `DropTarget`, `RejectReason` and `DropResult`.
 

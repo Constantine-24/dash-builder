@@ -52,7 +52,7 @@ The layout is an **ordered list of widgets that flows** like text: left to right
    - Shrink to fit: growing a widget's width shrinks its row neighbors.
    - Swap: resize behaves like Block *(my call)*.
 5. **Drag handle:** a widget can declare a handle element, and only that element starts a drag (e.g. so a map inside a widget can still be panned). Without a handle, the whole widget is draggable.
-6. **Locked widgets:** a widget can be marked locked. It can't be dragged or resized, it can't be a swap target, and other widgets can't be dropped in a way that changes its index in the list. It keeps its **index** while others flow around it. *(Index-locking is my call; with an ordered-list model a locked widget's row and column can still shift when widgets before it change size.)*
+6. **Locked widgets:** a widget can be marked locked. It can't be dragged or resized and it can't be a swap target. It is pinned to its **index** in the list; unlocked widgets reorder freely around it, so a widget can be dropped on the other side of a locked one and the unlocked widgets fill the remaining slots in order. *(Author's decision, 2026-10-28. With an ordered-list model a locked widget's row and column can still shift when widgets before it change size.)*
 7. **Adding and removing widgets at runtime:** the developer adds or removes items in the layout, and the grid updates. A new widget is appended to the end by default unless the developer inserts it at an index.
 8. **Persistence via JSON:** the grid emits the layout on change; the developer stores it and passes it back in. The library does no storage itself.
 9. **Responsive:** below a breakpoint, widgets stack into a single column in list order. Dragging still works there, but **reordering on mobile is temporary**: it lasts only for that visit, does not change the saved layout, and does not emit `onLayoutChange`.
@@ -125,7 +125,7 @@ v1 is a success when it can **replace the grid in one of the author's real dashb
 - Rows with mixed heights are bands sized by their tallest widget (see Core model).
 - Shrink-to-fit: neighbors in the target row shrink **nearest first**, one column at a time, down to their `minW`. The dropped widget keeps its size. If the row still can't fit, the drop is **blocked** (as in Block mode). Shrunk widgets **don't grow back** automatically.
 - Resize in Swap mode behaves like Block.
-- Locked widgets keep their list index.
+- Locked widgets are pinned to their list index; unlocked widgets reorder freely around them (a drop may cross a locked widget). *(Author's decision, 2026-10-28; earlier: a drop that changed a locked widget's index was refused.)*
 - Mobile stacking follows list order; the breakpoint has a **sensible default**, overridable by the developer.
 - **Pragmatic drag and drop** is the leading candidate for the drag mechanics (agnostic core, closest-edge detection, drop indicator), but the builder may choose another approach if it doesn't deliver the required feel.
 
