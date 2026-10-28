@@ -1,4 +1,5 @@
 import { computeFlow, rowsOf, totalRows } from './flow.js';
+import { rowsWithout, sameRows } from './rows.js';
 import { shrinkRowToFit } from './shrink.js';
 import type { DropResult, DropTarget, EngineConfig, LayoutItem } from './types.js';
 
@@ -10,16 +11,6 @@ function withoutItem(layout: LayoutItem[], dragId: string): { dragged: LayoutIte
   const from = layout.findIndex((i) => i.id === dragId);
   if (from < 0) return null;
   return { dragged: layout[from], rest: layout.filter((_, i) => i !== from) };
-}
-
-function rowsWithout(layout: LayoutItem[], columns: number, id: string): string[][] {
-  return rowsOf(computeFlow(layout, columns))
-    .map((row) => row.filter((x) => x !== id))
-    .filter((row) => row.length > 0);
-}
-
-function sameRows(a: string[][], b: string[][]): boolean {
-  return a.length === b.length && a.every((row, i) => row.length === b[i].length && row.every((id, j) => id === b[i][j]));
 }
 
 function insertAt(rest: LayoutItem[], dragged: LayoutItem, index: number): LayoutItem[] {
