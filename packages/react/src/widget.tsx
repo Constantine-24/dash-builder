@@ -4,12 +4,12 @@ export type WidgetProps = { id: string } & Omit<ComponentPropsWithRef<'div'>, 'i
 
 /** A grid widget. `id` is the layout item id; it is exposed as `data-grid-id`, not as a DOM `id`. */
 export function Widget({ id, ...rest }: WidgetProps) {
-  return <div data-grid-id={id} {...rest} />;
+  return <div {...rest} data-grid-id={id} />;
 }
 
 /** Marks the part of a widget that starts a drag (when the grid uses handles). */
 export function WidgetHandle(props: ComponentPropsWithRef<'span'>) {
-  return <span data-grid-handle="" {...props} />;
+  return <span {...props} data-grid-handle="" />;
 }
 
 Widget.Handle = WidgetHandle;

@@ -21,6 +21,12 @@ it('renders a div with data-grid-id, no DOM id, and a handle span', () => {
   expect(span.getAttribute('data-grid-handle')).toBe('');
 });
 
+it('grid attributes win over consumer props', () => {
+  const props = { 'data-grid-id': 'z' };
+  const { container } = render(<Widget id="a" {...props} />);
+  expect((container.firstElementChild as HTMLElement).getAttribute('data-grid-id')).toBe('a');
+});
+
 it('forwards ref to the div', () => {
   const ref = createRef<HTMLDivElement>();
   const { container } = render(<Widget id="b" ref={ref} />);
