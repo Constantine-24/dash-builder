@@ -84,7 +84,7 @@ Extra props (`className`, `style`, `data-*`, ...) go to the container `div`. `cl
 `<Widget id>` renders a `div` with the class `gm-item` and `data-grid-id={id}` (not a DOM `id`); `Widget.Handle` renders a `span` with `data-grid-handle`. Other props go to the element, but the grid attributes always win: `className` is appended to `gm-item`.
 
 - Changing a widget's `className` while it is being dragged drops the core's drag-state classes (`gm-item--placeholder`, `gm-item--swap-target`, `gm-item--swap-blocked`) until the pointer moves again (swap target) or the next drag (placeholder). The drag and its drop are not affected.
-- `dangerouslySetInnerHTML` on a `Widget` is not supported: it would replace the resize handle the grid puts inside the widget. Set it on an element inside the widget instead.
+- `dangerouslySetInnerHTML` on a `Widget` is not supported: the grid adds its own resize handle inside the widget, and React's inner HTML replaces the widget's whole content. Set it on an element inside the widget instead.
 
 ### Adding widgets: use the ref
 
