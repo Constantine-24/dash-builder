@@ -83,3 +83,10 @@
   border-color: var(--gm-marker-blocked-color);
   background: color-mix(in srgb, var(--gm-marker-blocked-color) 12%, transparent);
 }
+
+/* Swap mode: the drop target is outlined instead of showing a marker line. */
+.gm-item--swap-target {
+  outline: 2px solid var(--gm-marker-color);
+  outline-offset: -2px;
+}
+.gm-item--swap-target.gm-item--swap-blocked { outline-color: var(--gm-marker-blocked-color); }

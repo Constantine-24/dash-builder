@@ -2,6 +2,7 @@ import { computeFlow, stackForNarrow } from '../engine/flow.js';
 import { addItem as engineAddItem, removeItem as engineRemoveItem } from '../engine/mutate.js';
 import { layoutsEqual, normalizeLayout } from '../engine/normalize.js';
 import type { DropMode, DropResult, LayoutItem, PlacedItem, RejectReason } from '../engine/types.js';
+import { createDrag } from './drag.js';
 
 export interface GridOptions {
   columns: number;
@@ -31,6 +32,8 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
   const opts = { ...options };
   let layout: LayoutItem[] = normalizeLayout(opts.layout, opts.columns);
   let narrow = false;
+  // Temporary narrow-view order (ids) from a narrow drag; never emitted, cleared by setLayout.
+  let narrowOrder: string[] | null = null;
   let destroyed = false;
 
   const items = new Map<string, HTMLElement>(); // widgets currently managed, by id
@@ -47,20 +50,50 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
   container.style.display = 'grid';
   container.appendChild(marker);
 
-  // ---- interaction hook points (filled in by drag / resize tasks) ----------
-  // Cancel any active drag or resize and drop transient state (e.g. the temporary
-  // narrow reorder). Called from setLayout, setOptions and destroy.
-  function cancelInteraction(): void {}
-  // Called once per widget element after it is scanned and rendered; pointerdown
-  // listeners for drag (on [data-grid-handle] or the whole widget) and for the
-  // resize handle attach here. Must be idempotent across refresh() calls.
-  function bindItem(_el: HTMLElement, _id: string): void {}
-  // Called when a widget element leaves the managed set (refresh / destroy).
-  function unbindItem(_el: HTMLElement): void {}
-  // ---------------------------------------------------------------------------
-
   const config = () => ({ columns: opts.columns, maxRows: opts.maxRows, mode: opts.dropMode ?? 'insert' });
   const emit = () => opts.onLayoutChange?.(layout.map((i) => ({ ...i })));
+
+  /** The layout in narrow-view order: the temporary order first, then items it doesn't know. */
+  function narrowList(): LayoutItem[] {
+    if (!narrowOrder) return layout;
+    const byId = new Map(layout.map((i) => [i.id, i]));
+    const ordered = narrowOrder.flatMap((id) => byId.get(id) ?? []);
+    const seen = new Set(ordered.map((i) => i.id));
+    return [...ordered, ...layout.filter((i) => !seen.has(i.id))];
+  }
+
+  // ---- interactions --------------------------------------------------------
+  const drag = createDrag({
+    container,
+    marker,
+    items,
+    isNarrow: () => narrow,
+    getList: () => (narrow ? narrowList() : layout),
+    config,
+    commit(next) {
+      layout = next;
+      render();
+      emit();
+    },
+    setNarrowOrder(ids) {
+      narrowOrder = ids;
+      render();
+    },
+  });
+  // Cancel any active drag or resize. Called from setLayout, setOptions, destroy
+  // and from render when the view flips between wide and narrow.
+  function cancelInteraction(): void {
+    drag.cancel();
+  }
+  // Called once per element when it becomes managed (or is rebound under a new id).
+  function bindItem(el: HTMLElement, id: string): void {
+    drag.bind(el, id);
+  }
+  // Called when an element leaves the managed set or before it is rebound.
+  function unbindItem(el: HTMLElement): void {
+    drag.unbind(el);
+  }
+  // ---------------------------------------------------------------------------
 
   function scan(): void {
     const winners = new Map<string, HTMLElement>();
@@ -122,13 +155,15 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
 
   function render(): void {
     scan();
-    narrow = measureNarrow();
+    const nextNarrow = measureNarrow();
+    if (nextNarrow !== narrow) cancelInteraction(); // axis and drop config differ between views
+    narrow = nextNarrow;
     container.classList.toggle('gm-grid--narrow', narrow);
     container.style.setProperty('--gm-columns', String(narrow ? 1 : opts.columns));
     container.style.setProperty('--gm-row-height', `${opts.rowHeight ?? 80}px`);
     container.style.setProperty('--gm-gap', `${opts.gap ?? 8}px`);
 
-    const placed: PlacedItem[] = narrow ? stackForNarrow(layout) : computeFlow(layout, opts.columns);
+    const placed: PlacedItem[] = narrow ? stackForNarrow(narrowList()) : computeFlow(layout, opts.columns);
     const byId = new Map(placed.map((p) => [p.id, p]));
     for (const [id, node] of items) {
       const p = byId.get(id);
@@ -167,7 +202,8 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
 
   return {
     setLayout(next) {
-      cancelInteraction(); // also clears the temporary narrow order
+      cancelInteraction();
+      narrowOrder = null;
       layout = normalizeLayout(next, opts.columns);
       render();
     },

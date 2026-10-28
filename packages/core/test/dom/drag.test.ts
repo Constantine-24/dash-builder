@@ -1,0 +1,339 @@
+// @vitest-environment happy-dom
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { createGrid } from '../../src/index.js';
+import type { DropMode, LayoutItem } from '../../src/index.js';
+
+const L: LayoutItem[] = [
+  { id: 'A', w: 1, h: 1 },
+  { id: 'B', w: 3, h: 1 },
+  { id: 'C', w: 2, h: 1 },
+  { id: 'D', w: 2, h: 1 },
+];
+
+type Box = { left: number; top: number; right: number; bottom: number };
+// Task 8 geometry (4 columns, 8px gap)
+const WIDE: Record<string, Box> = {
+  A: { left: 0, right: 100, top: 0, bottom: 80 },
+  B: { left: 108, right: 424, top: 0, bottom: 80 },
+  C: { left: 0, right: 208, top: 88, bottom: 168 },
+  D: { left: 216, right: 424, top: 88, bottom: 168 },
+};
+const NARROW: Record<string, Box> = {
+  A: { left: 0, right: 400, top: 0, bottom: 80 },
+  B: { left: 0, right: 400, top: 88, bottom: 168 },
+  C: { left: 0, right: 400, top: 176, bottom: 256 },
+  D: { left: 0, right: 400, top: 264, bottom: 344 },
+};
+
+const PE: typeof MouseEvent = typeof PointerEvent !== 'undefined' ? PointerEvent : MouseEvent;
+
+let container: HTMLElement;
+const el = (id: string) => container.querySelector(`[data-grid-id="${id}"]`) as HTMLElement;
+const col = (id: string) => el(id).style.getPropertyValue('--gm-col');
+const row = (id: string) => el(id).style.getPropertyValue('--gm-row');
+const marker = () => container.querySelector('.gm-marker') as HTMLElement;
+const ghost = () => document.body.querySelector('.gm-ghost');
+const order = (layout: LayoutItem[]) => layout.map((i) => i.id);
+
+function rect(b: Box): DOMRect {
+  return { ...b, x: b.left, y: b.top, width: b.right - b.left, height: b.bottom - b.top, toJSON() {} } as DOMRect;
+}
+
+function setup(boxes = WIDE, width = 1000, handleOn?: string) {
+  container = document.createElement('div');
+  Object.defineProperty(container, 'clientWidth', { configurable: true, value: width });
+  container.getBoundingClientRect = () => rect({ left: 0, top: 0, right: 424, bottom: 400 });
+  for (const id of Object.keys(boxes)) {
+    const d = document.createElement('div');
+    d.dataset.gridId = id;
+    const p = document.createElement('p');
+    p.className = 'content';
+    p.textContent = id;
+    d.appendChild(p);
+    if (id === handleOn) {
+      const h = document.createElement('span');
+      h.setAttribute('data-grid-handle', '');
+      d.appendChild(h);
+    }
+    d.getBoundingClientRect = () => rect(boxes[id]!);
+    container.appendChild(d);
+  }
+  document.body.appendChild(container);
+}
+
+function grid(extra: { layout?: LayoutItem[]; dropMode?: DropMode } = {}) {
+  const onLayoutChange = vi.fn();
+  const g = createGrid(container, { columns: 4, layout: extra.layout ?? L, dropMode: extra.dropMode, onLayoutChange });
+  return { g, onLayoutChange };
+}
+
+const fire = (target: EventTarget, type: string, x: number, y: number) =>
+  target.dispatchEvent(new PE(type, { clientX: x, clientY: y, bubbles: true, button: 0 }));
+const down = (target: EventTarget, x: number, y: number) => fire(target, 'pointerdown', x, y);
+const move = (x: number, y: number) => fire(document, 'pointermove', x, y);
+const up = (x: number, y: number) => fire(document, 'pointerup', x, y);
+
+const snapshot = (ids: string[]) => ids.map((id) => [col(id), row(id)]);
+
+beforeEach(() => {
+  document.body.innerHTML = '';
+  vi.stubGlobal('requestAnimationFrame', undefined);
+  vi.stubGlobal('cancelAnimationFrame', undefined);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('drag', () => {
+  test('drag C onto the left half of B: ghost, placeholder, marker, others untouched, emits A,C,B,D', () => {
+    setup();
+    const { onLayoutChange } = grid();
+    const before = snapshot(['A', 'B', 'D']);
+    down(el('C'), 100, 128);
+    move(150, 40);
+    const g = ghost() as HTMLElement;
+    expect(g).not.toBeNull();
+    expect(g.classList.contains('gm-ghost')).toBe(true);
+    expect(g.style.position).toBe('fixed');
+    expect(g.style.pointerEvents).toBe('none');
+    expect(g.style.width).toBe('208px');
+    expect(g.style.height).toBe('80px');
+    // keeps the grab offset (100, 40) inside C
+    expect(g.style.left).toBe('50px');
+    expect(g.style.top).toBe('0px');
+    expect(g.hasAttribute('data-grid-id')).toBe(false);
+    expect(el('C').classList.contains('gm-item--placeholder')).toBe(true);
+    expect(marker().hidden).toBe(false);
+    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+    expect(snapshot(['A', 'B', 'D'])).toEqual(before);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+
+    up(150, 40);
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['A', 'C', 'B', 'D']);
+    expect(ghost()).toBeNull();
+    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(marker().hidden).toBe(true);
+  });
+
+  test('block mode, same drag: marker blocked, pointerup does not emit', () => {
+    setup();
+    const { onLayoutChange } = grid({ dropMode: 'block' });
+    down(el('C'), 100, 128);
+    move(150, 40);
+    expect(marker().hidden).toBe(false);
+    expect(marker().classList.contains('gm-marker--blocked')).toBe(true);
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(ghost()).toBeNull();
+    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+  });
+
+  test('pointerdown/pointerup without movement: no ghost, no emit', () => {
+    setup();
+    const { onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(102, 129); // below the 4px threshold
+    expect(ghost()).toBeNull();
+    up(102, 129);
+    expect(ghost()).toBeNull();
+    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('dropping C back onto its own spot (left half of D) does not emit', () => {
+    setup();
+    const { onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(250, 128);
+    up(250, 128);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(ghost()).toBeNull();
+  });
+
+  test('pointercancel mid-drag: no emit, no ghost', () => {
+    setup();
+    const { onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    fire(document, 'pointercancel', 150, 40);
+    expect(ghost()).toBeNull();
+    expect(marker().hidden).toBe(true);
+    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('Escape mid-drag cancels', () => {
+    setup();
+    const { onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(ghost()).toBeNull();
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('setLayout mid-drag: no ghost and a later pointerup does not emit', () => {
+    setup();
+    const { g, onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    g.setLayout(L);
+    expect(ghost()).toBeNull();
+    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(marker().hidden).toBe(true);
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('setOptions mid-drag cancels without emitting', () => {
+    setup();
+    const { g, onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    g.setOptions({ gap: 4 });
+    expect(ghost()).toBeNull();
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('destroy mid-drag cancels and cleans up', () => {
+    setup();
+    const { g, onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    g.destroy();
+    expect(ghost()).toBeNull();
+    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('a locked widget does not start a drag', () => {
+    setup();
+    const { onLayoutChange } = grid({ layout: L.map((i) => (i.id === 'A' ? { ...i, locked: true } : i)) });
+    down(el('A'), 50, 40);
+    move(300, 128);
+    expect(ghost()).toBeNull();
+    expect(el('A').classList.contains('gm-item--placeholder')).toBe(false);
+    up(300, 128);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('with [data-grid-handle], only the handle starts a drag', () => {
+    setup(WIDE, 1000, 'B');
+    const { onLayoutChange } = grid();
+    const handle = el('B').querySelector('[data-grid-handle]') as HTMLElement;
+    expect(handle.style.touchAction).toBe('none');
+    expect(el('A').style.touchAction).toBe('none');
+
+    down(el('B').querySelector('.content')!, 200, 40);
+    move(30, 128);
+    expect(ghost()).toBeNull();
+    up(30, 128);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+
+    down(handle, 200, 40);
+    move(30, 40); // left half of A -> before A
+    expect(ghost()).not.toBeNull();
+    up(30, 40);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['B', 'A', 'C', 'D']);
+  });
+
+  test('pointerdown on the resize handle does not start a drag', () => {
+    setup();
+    const { onLayoutChange } = grid();
+    const rh = el('C').querySelector('.gm-resize-handle') as HTMLElement;
+    expect(rh).not.toBeNull();
+    down(rh, 200, 160);
+    move(150, 40);
+    expect(ghost()).toBeNull();
+    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    up(150, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('narrow view: reorder re-renders in the new order without emitting; setLayout restores', () => {
+    setup(NARROW, 500);
+    const { g, onLayoutChange } = grid();
+    expect(container.classList.contains('gm-grid--narrow')).toBe(true);
+    expect(row('D')).toBe('4 / span 1');
+    down(el('D'), 200, 300);
+    move(200, 20); // top half of A
+    expect(marker().hidden).toBe(false);
+    // horizontal line in narrow view
+    expect(marker().style.width).toBe('400px');
+    up(200, 20);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(row('D')).toBe('1 / span 1');
+    expect(row('A')).toBe('2 / span 1');
+    expect(row('C')).toBe('4 / span 1');
+    expect(order(g.getLayout())).toEqual(['A', 'B', 'C', 'D']);
+    g.setLayout(L);
+    expect(row('D')).toBe('4 / span 1');
+    expect(row('A')).toBe('1 / span 1');
+  });
+
+  test('swap mode: target gets gm-item--swap-target and drop emits the swapped order', () => {
+    setup();
+    const { onLayoutChange } = grid({ dropMode: 'swap' });
+    down(el('C'), 100, 128);
+    move(50, 40); // over A
+    expect(el('A').classList.contains('gm-item--swap-target')).toBe(true);
+    expect(marker().hidden).toBe(true);
+    move(300, 40); // over B
+    expect(el('A').classList.contains('gm-item--swap-target')).toBe(false);
+    expect(el('B').classList.contains('gm-item--swap-target')).toBe(true);
+    move(50, 40);
+    up(50, 40);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['C', 'B', 'A', 'D']);
+    expect(container.querySelector('.gm-item--swap-target')).toBeNull();
+  });
+
+  test('sticky marker: a null hit inside the container keeps the last hit', () => {
+    setup();
+    const { onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40); // left half of B
+    move(150, 120); // over C's own placeholder -> resolveTarget null
+    expect(marker().hidden).toBe(false);
+    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+    up(150, 120);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['A', 'C', 'B', 'D']);
+  });
+
+  test('sticky marker: outside the container the hit clears and pointerup cancels', () => {
+    setup();
+    const { onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    move(600, 40); // outside the container rect
+    expect(marker().hidden).toBe(true);
+    expect(ghost()).not.toBeNull();
+    up(600, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    expect(ghost()).toBeNull();
+  });
+
+  test('requestAnimationFrame: moves are coalesced and pointerup flushes the latest move', () => {
+    const queue: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => queue.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', (h: number) => { queue[h - 1] = () => {}; });
+    setup();
+    const { onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 40);
+    move(160, 40);
+    move(170, 40);
+    expect(ghost()).not.toBeNull();
+    expect(queue.length).toBe(1);
+    expect(marker().hidden).toBe(true); // not processed yet
+    queue.shift()!(0);
+    expect(marker().hidden).toBe(false);
+    move(30, 40); // left half of A, pending
+    up(30, 40);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['C', 'A', 'B', 'D']);
+  });
+});
