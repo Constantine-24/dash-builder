@@ -245,15 +245,20 @@ describe('drag', () => {
   });
 
   test('pointerdown on the resize handle does not start a drag', () => {
-    setup();
-    const { onLayoutChange } = grid();
+    // consistent track width for the resize this starts: clientWidth 424, breakpoint below it
+    setup(WIDE, 424);
+    const onLayoutChange = vi.fn();
+    createGrid(container, { columns: 4, layout: L, breakpoint: 400, onLayoutChange });
     const rh = el('C').querySelector('.gm-resize-handle') as HTMLElement;
     expect(rh).not.toBeNull();
     down(rh, 200, 160);
     move(150, 40);
+    // the pointerdown starts a resize instead
+    expect(document.querySelector('.gm-resize-preview')).not.toBeNull();
     expect(ghost()).toBeNull();
     expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
-    up(150, 40);
+    up(200, 160); // released where it started: C keeps its size
+    expect(document.querySelector('.gm-resize-preview')).toBeNull();
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
 

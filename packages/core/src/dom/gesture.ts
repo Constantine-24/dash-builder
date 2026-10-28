@@ -1,24 +1,33 @@
 // Small helpers shared by the drag and resize interactions.
 
-function preventNative(e: Event): void {
-  e.preventDefault();
-}
+/** Per-document count of held gestures, so overlapping gestures (two grids) share one body userSelect save. */
+const held = new WeakMap<Document, { count: number; prevUserSelect: string }>();
 
 /**
  * While a gesture is active: no text selection (container class + body style +
- * selectstart) and no page scroll on touch. Returns the function that undoes it.
+ * selectstart) and no page scroll on touch. Returns the function that undoes it
+ * (idempotent). Each call owns its listeners; the body style is saved by the
+ * first concurrent gesture and restored by the last.
  */
 export function holdGesture(doc: Document, container: HTMLElement, cls: string): () => void {
+  const prevent = (e: Event) => e.preventDefault();
   container.classList.add(cls);
-  const prevUserSelect = doc.body.style.userSelect;
+  const state = held.get(doc) ?? { count: 0, prevUserSelect: '' };
+  if (state.count === 0) state.prevUserSelect = doc.body.style.userSelect;
+  state.count++;
+  held.set(doc, state);
   doc.body.style.userSelect = 'none';
-  doc.addEventListener('selectstart', preventNative);
-  doc.addEventListener('touchmove', preventNative, { passive: false });
+  doc.addEventListener('selectstart', prevent);
+  doc.addEventListener('touchmove', prevent, { passive: false });
+  let done = false;
   return () => {
+    if (done) return;
+    done = true;
     container.classList.remove(cls);
-    doc.body.style.userSelect = prevUserSelect;
-    doc.removeEventListener('selectstart', preventNative);
-    doc.removeEventListener('touchmove', preventNative);
+    doc.removeEventListener('selectstart', prevent);
+    doc.removeEventListener('touchmove', prevent);
+    state.count--;
+    if (state.count === 0) doc.body.style.userSelect = state.prevUserSelect;
   };
 }
 

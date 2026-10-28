@@ -134,10 +134,14 @@ export function createResize(ctx: ResizeContext): ResizeInteraction {
     e.preventDefault();
   }
 
-  /** Content-box width of the container: the width the grid tracks share. */
+  /** Content-box width of the container (no borders, scrollbar or padding): the width the grid tracks share. */
   function trackWidth(): number {
-    const c = container.getBoundingClientRect();
-    return c.width - 2 * container.clientLeft;
+    const cs = doc.defaultView?.getComputedStyle(container);
+    const pad = (v: string | undefined) => {
+      const n = parseFloat(v ?? '');
+      return Number.isFinite(n) ? n : 0;
+    };
+    return container.clientWidth - pad(cs?.paddingLeft) - pad(cs?.paddingRight);
   }
 
   /** Recomputes the candidate size for a pointer position and refreshes the preview. */

@@ -41,7 +41,8 @@ function rect(b: Box): DOMRect {
   return { ...b, x: b.left, y: b.top, width: b.right - b.left, height: b.bottom - b.top, toJSON() {} } as DOMRect;
 }
 
-function setup(boxes = WIDE, width = 1000) {
+// clientWidth is the track width source (424 = 4·100 + 3·8); breakpoint 400 keeps it wide
+function setup(boxes = WIDE, width = 424) {
   container = document.createElement('div');
   Object.defineProperty(container, 'clientWidth', { configurable: true, value: width });
   container.getBoundingClientRect = () => rect({ left: 0, top: 0, right: 424, bottom: 400 });
@@ -58,9 +59,16 @@ function setup(boxes = WIDE, width = 1000) {
   document.body.appendChild(container);
 }
 
-function grid(extra: { layout?: LayoutItem[]; dropMode?: DropMode } = {}) {
+function grid(extra: { layout?: LayoutItem[]; dropMode?: DropMode; maxRows?: number } = {}) {
   const onLayoutChange = vi.fn();
-  const g = createGrid(container, { columns: 4, layout: extra.layout ?? L, dropMode: extra.dropMode, onLayoutChange });
+  const g = createGrid(container, {
+    columns: 4,
+    layout: extra.layout ?? L,
+    dropMode: extra.dropMode,
+    maxRows: extra.maxRows,
+    breakpoint: 400,
+    onLayoutChange,
+  });
   return { g, onLayoutChange };
 }
 
@@ -180,7 +188,7 @@ describe('resize', () => {
   });
 
   test('narrow view refuses to resize', () => {
-    setup(NARROW, 500);
+    setup(NARROW, 300);
     const { onLayoutChange } = grid();
     expect(container.classList.contains('gm-grid--narrow')).toBe(true);
     const h = handle('A')!; // present in the DOM, hidden by CSS
@@ -336,6 +344,88 @@ describe('resize', () => {
     up(HX, HY);
     handle('A')!.click();
     expect(clicked).toHaveBeenCalledTimes(2);
+  });
+
+  test('swap mode behaves like block: widening A into B is blocked, nothing emitted', () => {
+    setup();
+    const { onLayoutChange } = grid({ dropMode: 'swap' });
+    down(handle('A')!, HX, HY);
+    move(HX + 108, HY);
+    expect(preview()!.classList.contains('gm-resize-preview--blocked')).toBe(true);
+    up(HX + 108, HY);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('maxRows 2 + block: growing A to h3 is blocked, nothing emitted', () => {
+    setup();
+    const { onLayoutChange } = grid({ dropMode: 'block', maxRows: 2 });
+    down(handle('A')!, HX, HY);
+    move(HX, HY + 176);
+    const p = preview()!;
+    expect(p.style.height).toBe('256px');
+    expect(p.classList.contains('gm-resize-preview--blocked')).toBe(true);
+    up(HX, HY + 176);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('horizontal container padding is excluded from the column width', () => {
+    const PADDED: Record<string, Box> = Object.fromEntries(
+      Object.entries(WIDE).map(([id, b]) => [id, { ...b, left: b.left + 10, right: b.right + 10 }]),
+    );
+    setup(PADDED, 444);
+    container.style.padding = '0 10px';
+    container.getBoundingClientRect = () => rect({ left: 0, top: 0, right: 444, bottom: 400 });
+    const { onLayoutChange } = grid();
+    down(handle('A')!, HX + 10, HY);
+    move(HX + 10 + 108, HY);
+    const p = preview()!;
+    // colWidth (444 − 20 − 3·8) / 4 = 100: preview anchored at A's left in the padding box
+    expect([p.style.left, p.style.width]).toEqual(['10px', '208px']);
+    up(HX + 10 + 108, HY);
+    expect(sizes(onLayoutChange.mock.calls[0][0])[0]).toBe('A2x1');
+  });
+
+  test('two grids holding gestures concurrently: ending one keeps suppression for the other', () => {
+    setup();
+    const first = container;
+    grid();
+    setup();
+    const second = container;
+    const g2 = grid();
+    const prevented = (type: string) => {
+      const e = new Event(type, { bubbles: true, cancelable: true });
+      document.dispatchEvent(e);
+      return e.defaultPrevented;
+    };
+    document.body.style.userSelect = 'text';
+    const h1 = first.querySelector('[data-grid-id="A"] > .gm-resize-handle') as HTMLElement;
+    const h2 = second.querySelector('[data-grid-id="A"] > .gm-resize-handle') as HTMLElement;
+    // grid 1: drag C (pointer 1); grid 2: resize A (pointer 2)
+    down(first.querySelector('[data-grid-id="C"]')!, 100, 128, { pointerId: 1 });
+    move(150, 40, { pointerId: 1 });
+    expect(ghost()).not.toBeNull();
+    down(h2, HX, HY, { pointerId: 2 });
+    expect(second.classList.contains('gm-grid--resizing')).toBe(true);
+    // the drag in grid 1 ends; the resize in grid 2 is still held
+    up(150, 40, { pointerId: 1 });
+    expect(first.classList.contains('gm-grid--dragging')).toBe(false);
+    expect(document.body.style.userSelect).toBe('none');
+    expect(prevented('selectstart')).toBe(true);
+    expect(prevented('touchmove')).toBe(true);
+    up(HX, HY, { pointerId: 2 });
+    expect(document.body.style.userSelect).toBe('text');
+    expect(prevented('selectstart')).toBe(false);
+    expect(prevented('touchmove')).toBe(false);
+    // and the other way round: grid 1 resize ends first
+    down(h1, HX, HY, { pointerId: 3 });
+    down(h2, HX, HY, { pointerId: 4 });
+    up(HX, HY, { pointerId: 3 });
+    expect(document.body.style.userSelect).toBe('none');
+    expect(prevented('selectstart')).toBe(true);
+    g2.g.destroy();
+    expect(document.body.style.userSelect).toBe('text');
+    expect(prevented('selectstart')).toBe(false);
+    document.body.style.userSelect = '';
   });
 
   test('grid.css: handle touch-action none, preview and resizing selection rules exist', async () => {
