@@ -1,0 +1,11 @@
+{
+  "name": "@grid-master/angular",
+  "version": "0.0.0",
+  "license": "MIT",
+  "peerDependencies": {
+    "@angular/common": "^22.0.0",
+    "@angular/core": "^22.0.0",
+    "@grid-master/core": "0.x"
+  },
+  "sideEffects": false
+}
