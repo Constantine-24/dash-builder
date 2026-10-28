@@ -288,6 +288,55 @@ describe('drag', () => {
     expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['D', 'B', 'A', 'C']);
   });
 
+  test('insert mode: next to a locked widget the marker shows the landing spot, not the pointer spot', () => {
+    setup();
+    const { onLayoutChange } = grid({ layout: L.map((i) => (i.id === 'B' ? { ...i, locked: true } : i)) });
+    down(el('D'), 300, 128);
+    move(150, 40); // left half of B: "before B", but pinning lands D after B
+    expect(marker().hidden).toBe(false);
+    expect(marker().style.left).toBe('422px'); // B's right edge minus half the line
+    expect(marker().style.top).toBe('0px');
+    up(150, 40);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['A', 'B', 'D', 'C']);
+  });
+
+  test('a form control inside a handle-less widget does not start a drag', () => {
+    setup();
+    const { onLayoutChange } = grid();
+    const button = document.createElement('button');
+    el('B').appendChild(button);
+    down(button, 200, 40);
+    move(220, 40);
+    expect(ghost()).toBeNull();
+    up(220, 40);
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  test('data-grid-no-drag opts an element out of starting a drag', () => {
+    setup();
+    grid();
+    const span = document.createElement('span');
+    span.setAttribute('data-grid-no-drag', '');
+    el('B').appendChild(span);
+    down(span, 200, 40);
+    move(220, 40);
+    expect(ghost()).toBeNull();
+    up(220, 40);
+  });
+
+  test('a [data-grid-handle] that is a <button> still starts the drag', () => {
+    setup();
+    const handle = document.createElement('button');
+    handle.setAttribute('data-grid-handle', '');
+    el('B').appendChild(handle);
+    const { onLayoutChange } = grid();
+    down(handle, 200, 40);
+    move(30, 40);
+    expect(ghost()).not.toBeNull();
+    up(30, 40);
+    expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['B', 'A', 'C', 'D']);
+  });
+
   test('with [data-grid-handle], only the handle starts a drag', () => {
     setup(WIDE, 1000, 'B');
     const { onLayoutChange } = grid();

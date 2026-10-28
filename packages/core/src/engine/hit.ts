@@ -24,6 +24,25 @@ function lineAfter(r: ItemRect, axis: Axis): Marker {
 }
 
 /**
+ * Line at the spot the dragged item lands in `order` (the planned order): after the
+ * nearest item before it that has a rect, else before the nearest one after it.
+ */
+export function landingMarker(rects: ItemRect[], order: string[], dragId: string, axis: Axis): Marker | null {
+  const at = order.indexOf(dragId);
+  if (at < 0) return null;
+  const rectOf = (id: string) => rects.find((r) => r.id === id);
+  for (let i = at - 1; i >= 0; i--) {
+    const r = rectOf(order[i]!);
+    if (r) return lineAfter(r, axis);
+  }
+  for (let i = at + 1; i < order.length; i++) {
+    const r = rectOf(order[i]!);
+    if (r) return lineBefore(r, axis);
+  }
+  return null;
+}
+
+/**
  * Turns a pointer position into a drop target plus marker geometry.
  * `rects` are in list order and include the dragged item, which is skipped.
  * Indexes are positions in the list without the dragged item. Targets drawn as

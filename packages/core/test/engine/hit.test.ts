@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { resolveTarget } from '../../src/engine/hit.js';
+import { landingMarker, resolveTarget } from '../../src/engine/hit.js';
 import type { ItemRect } from '../../src/engine/hit.js';
 
 const rects: ItemRect[] = [
@@ -78,5 +78,30 @@ describe('resolveTarget', () => {
     expect(right.target).toEqual({ index: 2, after: true });
     expect(left.target).toEqual({ index: 1 });
     expect('after' in left.target).toBe(false);
+  });
+});
+
+describe('landingMarker', () => {
+  test('line after the rect of the item before the dragged one in the planned order', () => {
+    expect(landingMarker(rects, ['A', 'B', 'D', 'C'], 'D', 'x')).toEqual({
+      kind: 'line', left: 424, top: 0, width: 0, height: 80,
+    });
+  });
+
+  test('dragged item first: line before the following item', () => {
+    expect(landingMarker(rects, ['D', 'A', 'B', 'C'], 'D', 'x')).toEqual({
+      kind: 'line', left: 0, top: 0, width: 0, height: 80,
+    });
+  });
+
+  test('stacked axis: horizontal line below the previous item', () => {
+    expect(landingMarker(stacked, ['A', 'B'], 'B', 'y')).toEqual({
+      kind: 'line', left: 0, top: 80, width: 200, height: 0,
+    });
+  });
+
+  test('skips items without a rect; null for a lone item', () => {
+    expect(landingMarker(rects, ['A', 'X', 'D'], 'D', 'x')).toEqual({ kind: 'line', left: 100, top: 0, width: 0, height: 80 });
+    expect(landingMarker([rects[3]!], ['D'], 'D', 'x')).toBeNull();
   });
 });

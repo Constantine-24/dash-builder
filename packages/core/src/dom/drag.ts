@@ -1,5 +1,5 @@
 import { planDrop } from '../engine/drop.js';
-import { resolveTarget } from '../engine/hit.js';
+import { landingMarker, resolveTarget } from '../engine/hit.js';
 import type { Hit, ItemRect } from '../engine/hit.js';
 import { layoutsEqual } from '../engine/normalize.js';
 import type { DropResult, DropTarget, EngineConfig, LayoutItem } from '../engine/types.js';
@@ -44,6 +44,8 @@ const LONG_PRESS_MS = 400; // touch on a handle-less widget: hold this long to a
 const LONG_PRESS_SLOP = 8; // px of movement that aborts a pending long-press (the page scrolls instead)
 const LINE = 4; // marker line thickness in px
 const HANDLE = '[data-grid-handle]';
+// form controls, links and editable text keep their own press behaviour (unless they are the handle)
+const NO_DRAG = 'input, textarea, select, button, option, label, a[href], [contenteditable]:not([contenteditable="false"]), [data-grid-no-drag]';
 
 interface Binding {
   id: string;
@@ -170,6 +172,9 @@ export function createDrag(ctx: DragContext): DragInteraction {
     if (hasHandle) {
       const handle = target.closest(HANDLE);
       if (!handle || !el.contains(handle)) return;
+    } else {
+      const control = target.closest(NO_DRAG);
+      if (control && el.contains(control)) return;
     }
     const item = ctx.getList().find((i) => i.id === b.id);
     if (!item || item.locked) return;
@@ -341,9 +346,26 @@ export function createDrag(ctx: DragContext): DragInteraction {
     const cfg = engineConfig(cur);
     const hit = resolveTarget(rects, { x: cur.x - ox, y: cur.y - oy }, cur.id, cfg.mode, cur.narrow ? 'y' : 'x');
     if (!hit) return; // sticky: keep the last valid hit while inside the container
-    cur.hit = hit;
-    cur.plan = planDrop(list, cfg, cur.id, toListTarget(hit.target, rects, list, cur.id));
+    const listTarget = toListTarget(hit.target, rects, list, cur.id);
+    const plan = planDrop(list, cfg, cur.id, listTarget);
+    cur.hit = plan.ok && 'index' in listTarget && !landsAtPointer(list, plan.layout, cur.id, listTarget.index)
+      ? { target: hit.target, marker: landingMarker(rects, plan.layout.map((i) => i.id), cur.id, cur.narrow ? 'y' : 'x') ?? hit.marker }
+      : hit;
+    cur.plan = plan;
     showHit(cur);
+  }
+
+  /** Pinned items can move the drop away from the pointer: do the dragged item's neighbours match a plain insert at `index`? */
+  function landsAtPointer(list: LayoutItem[], planned: LayoutItem[], dragId: string, index: number): boolean {
+    const rest = list.filter((i) => i.id !== dragId).map((i) => i.id);
+    const expected = [...rest.slice(0, index), dragId, ...rest.slice(index)];
+    const neighbours = (ids: string[]) => {
+      const at = ids.indexOf(dragId);
+      return [ids[at - 1], ids[at + 1]];
+    };
+    const [prev, next] = neighbours(expected);
+    const [gotPrev, gotNext] = neighbours(planned.map((i) => i.id));
+    return prev === gotPrev && next === gotNext;
   }
 
   function engineConfig(cur: Session): EngineConfig {
