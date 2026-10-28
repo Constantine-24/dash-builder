@@ -129,6 +129,7 @@ The engine is also exported for use without the DOM: `planDrop`, `planResize`, `
 - Mouse: press on the widget (or its handle) and move to drag. Resize with the corner handle (`.gm-resize-handle`) at the bottom right of unlocked widgets.
 - Touch: a widget with a `[data-grid-handle]` drags immediately from the handle. A widget without one needs a 400 ms long-press before it drags, so normal scrolling still works. Resize handles start at once.
 - Form controls (`input`, `textarea`, `select`, `button`, `label`, links with `href`, editable text) inside a widget without a `[data-grid-handle]` never start a drag, so they stay usable. Add `data-grid-no-drag` to any other element to opt it out the same way. A `[data-grid-handle]` that is itself a `button` still drags.
+- Dragging or resizing near the top or bottom edge of the scrolling area scrolls it.
 - Escape cancels an active drag or resize.
 
 ## Narrow view

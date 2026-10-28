@@ -1,6 +1,8 @@
 import { layoutsEqual } from '../engine/normalize.js';
 import { planResize } from '../engine/resize.js';
 import type { DropResult, EngineConfig, LayoutItem } from '../engine/types.js';
+import { createAutoScroll } from './autoscroll.js';
+import type { AutoScroll } from './autoscroll.js';
 import { capturePointer, createClickSwallow, holdGesture } from './gesture.js';
 
 /** The slice of controller state the resize interaction needs. */
@@ -50,6 +52,12 @@ interface Session {
   plan: DropResult | null;
   preview: HTMLElement;
   release: () => void;
+  auto: AutoScroll;
+  /** Last pointer position, replayed when autoscroll moves the page under a still pointer. */
+  lastX: number;
+  lastY: number;
+  /** Px autoscrolled since the gesture began; counts as pointer travel. */
+  scrolled: number;
 }
 
 export function createResize(ctx: ResizeContext): ResizeInteraction {
@@ -90,6 +98,14 @@ export function createResize(ctx: ResizeContext): ResizeInteraction {
       plan: null,
       preview,
       release: holdGesture(doc, container, 'gm-grid--resizing'),
+      auto: createAutoScroll(container, (dy) => {
+        if (!s) return;
+        s.scrolled += dy;
+        update(s, s.lastX, s.lastY);
+      }),
+      lastX: e.clientX,
+      lastY: e.clientY,
+      scrolled: 0,
     };
     e.preventDefault(); // no focus change / native drag from the handle
     clicks.disarm();
@@ -109,6 +125,7 @@ export function createResize(ctx: ResizeContext): ResizeInteraction {
     if (!s || !samePointer(e)) return;
     e.preventDefault();
     update(s, e.clientX, e.clientY);
+    s.auto.move(e.clientY);
   }
 
   function onUp(e: PointerEvent): void {
@@ -146,8 +163,10 @@ export function createResize(ctx: ResizeContext): ResizeInteraction {
 
   /** Recomputes the candidate size for a pointer position and refreshes the preview. */
   function update(cur: Session, x: number, y: number): void {
+    cur.lastX = x;
+    cur.lastY = y;
     const dx = x - cur.startX;
-    const dy = y - cur.startY;
+    const dy = y - cur.startY + cur.scrolled;
     if (Math.hypot(dx, dy) >= CLICK_SLOP) cur.moved = true;
     const cfg = ctx.config();
     const { rowHeight, gap } = ctx.metrics();
@@ -185,6 +204,7 @@ export function createResize(ctx: ResizeContext): ResizeInteraction {
     const cur = s;
     if (!cur) return;
     s = null;
+    cur.auto.stop();
     doc.removeEventListener('pointermove', onMove);
     doc.removeEventListener('pointerup', onUp);
     doc.removeEventListener('pointercancel', onCancel);

@@ -116,6 +116,28 @@ describe('resize', () => {
     expect(col('A')).toBe('1 / span 2');
   });
 
+  test('autoscroll: scrolling a row (88px) with the pointer held still previews and commits h + 1', () => {
+    setup();
+    const queue: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => queue.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    const parent = document.createElement('div');
+    parent.style.overflowY = 'auto';
+    Object.defineProperty(parent, 'scrollHeight', { configurable: true, value: 1000 });
+    Object.defineProperty(parent, 'clientHeight', { configurable: true, value: 400 });
+    parent.getBoundingClientRect = () => rect({ left: 0, top: -100, right: 424, bottom: HY });
+    parent.appendChild(container);
+    document.body.appendChild(parent);
+    const { onLayoutChange } = grid();
+    down(handle('A')!, HX, HY);
+    move(HX, HY); // pointer held at the scroll edge: 16px per frame
+    for (let i = 0; i < 6; i++) queue.shift()?.(0); // 96px of scroll
+    expect(parent.scrollTop).toBe(96);
+    expect(preview()!.style.height).toBe('168px');
+    up(HX, HY);
+    expect(sizes(onLayoutChange.mock.calls[0][0])).toEqual(['A1x2', 'B3x1', 'C2x1', 'D2x1']);
+  });
+
   test('block mode, same resize: preview blocked, nothing emitted', () => {
     setup();
     const { g, onLayoutChange } = grid({ dropMode: 'block' });

@@ -3,6 +3,8 @@ import { landingMarker, resolveTarget } from '../engine/hit.js';
 import type { Hit, ItemRect } from '../engine/hit.js';
 import { layoutsEqual } from '../engine/normalize.js';
 import type { DropResult, DropTarget, EngineConfig, LayoutItem } from '../engine/types.js';
+import { createAutoScroll } from './autoscroll.js';
+import type { AutoScroll } from './autoscroll.js';
 import { capturePointer, createClickSwallow, holdGesture } from './gesture.js';
 
 /** The slice of controller state the drag interaction needs. */
@@ -77,6 +79,8 @@ interface Session {
   frame: number | null;
   /** Undoes selection / scroll suppression; set once the drag starts. */
   release: (() => void) | null;
+  /** Edge autoscroll; set once the drag starts. */
+  auto: AutoScroll | null;
 }
 
 /**
@@ -200,6 +204,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
       swapTarget: null,
       frame: null,
       release: null,
+      auto: null,
     };
     const cur = s;
     if (cur.longPress) {
@@ -236,6 +241,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
     e.preventDefault();
     placeGhost(s);
     schedule(s);
+    s.auto?.move(s.y);
   }
 
   /** Long-press completed: start in place. */
@@ -293,6 +299,9 @@ export function createDrag(ctx: DragContext): DragInteraction {
     doc.body.appendChild(ghost);
     capturePointer(cur.el, cur.pointerId, true);
     cur.release = holdGesture(doc, ctx.container, 'gm-grid--dragging'); // no selection, no page scroll
+    cur.auto = createAutoScroll(ctx.container, () => {
+      if (s === cur) schedule(cur); // the page moved under a still pointer: hit-test again
+    });
   }
 
   function placeGhost(cur: Session): void {
@@ -426,6 +435,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
     if (!cur) return;
     s = null;
     dropFrame(cur);
+    cur.auto?.stop();
     doc.removeEventListener('pointermove', onMove);
     doc.removeEventListener('pointerup', onUp);
     doc.removeEventListener('pointercancel', onCancel);

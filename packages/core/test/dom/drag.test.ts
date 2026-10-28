@@ -783,6 +783,28 @@ describe('drag', () => {
     }
   });
 
+  test('autoscroll: a drag near the bottom of a scrollable parent scrolls it, and the drop commits at the final position', () => {
+    setup();
+    const queue: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => queue.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    const parent = document.createElement('div');
+    parent.style.overflowY = 'auto';
+    Object.defineProperty(parent, 'scrollHeight', { configurable: true, value: 1000 });
+    Object.defineProperty(parent, 'clientHeight', { configurable: true, value: 400 });
+    parent.getBoundingClientRect = () => rect({ left: 0, top: -100, right: 424, bottom: 400 });
+    parent.appendChild(container);
+    document.body.appendChild(parent);
+    const { onLayoutChange } = grid();
+    down(el('C'), 100, 128);
+    move(150, 395); // inside the container, within 48px of the parent's bottom
+    for (let i = 0; i < 3; i++) queue.shift()?.(0); // hit-test frame, then autoscroll steps
+    expect(parent.scrollTop).toBeGreaterThan(0);
+    move(150, 40);
+    up(150, 40);
+    expect(order(onLayoutChange.mock.calls[0]![0])).toEqual(['A', 'C', 'B', 'D']);
+  });
+
   test('grid.css: the ghost opacity variable has a fallback (the ghost lives on body)', async () => {
     const { readFileSync } = await import('node:fs');
     const css = readFileSync('src/styles/grid.css', 'utf8');
