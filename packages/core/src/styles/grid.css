@@ -29,9 +29,11 @@
 }
 .gm-marker[hidden] { display: none; }
 .gm-marker--blocked { background: var(--gm-marker-blocked-color); }
-/* While a drag is active: no text selection inside the grid. */
+/* While a drag or resize is active: no text selection inside the grid. */
 .gm-grid--dragging,
-.gm-grid--dragging * {
+.gm-grid--dragging *,
+.gm-grid--resizing,
+.gm-grid--resizing * {
   -webkit-user-select: none;
   user-select: none;
 }

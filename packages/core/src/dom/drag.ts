@@ -3,6 +3,7 @@ import { resolveTarget } from '../engine/hit.js';
 import type { Hit, ItemRect } from '../engine/hit.js';
 import { layoutsEqual } from '../engine/normalize.js';
 import type { DropResult, DropTarget, EngineConfig, LayoutItem } from '../engine/types.js';
+import { capturePointer, createClickSwallow, holdGesture } from './gesture.js';
 
 /** The slice of controller state the drag interaction needs. */
 export interface DragContext {
@@ -19,6 +20,8 @@ export interface DragContext {
   commit(next: LayoutItem[]): void;
   /** Narrow view: store a temporary order and render, without emitting. */
   setNarrowOrder(ids: string[]): void;
+  /** Another interaction (resize) is active: refuse to arm. */
+  isBusy(): boolean;
 }
 
 export interface DragInteraction {
@@ -30,6 +33,8 @@ export interface DragInteraction {
   sync(): void;
   /** Teardown: abort any drag and remove every document listener, including a pending click blocker. */
   destroy(): void;
+  /** A drag is armed or running. */
+  isActive(): boolean;
 }
 
 const THRESHOLD = 4; // px the pointer must travel before a drag starts
@@ -66,13 +71,15 @@ interface Session {
   plan: DropResult | null;
   swapTarget: HTMLElement | null;
   frame: number | null;
+  /** Undoes selection / scroll suppression; set once the drag starts. */
+  release: (() => void) | null;
 }
 
 export function createDrag(ctx: DragContext): DragInteraction {
   const bindings = new Map<HTMLElement, Binding>();
   let s: Session | null = null;
   const doc = ctx.container.ownerDocument;
-  let bodyUserSelect = '';
+  const clicks = createClickSwallow(doc);
 
   function bind(el: HTMLElement, id: string): void {
     unbind(el);
@@ -116,7 +123,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
   }
 
   function onDown(el: HTMLElement, e: PointerEvent): void {
-    if (s || e.button !== 0 || el.hidden) return;
+    if (s || e.button !== 0 || el.hidden || ctx.isBusy()) return;
     const b = bindings.get(el);
     const target = e.target instanceof Element ? e.target : null;
     if (!b || !target || !el.contains(target)) return;
@@ -150,6 +157,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
       plan: null,
       swapTarget: null,
       frame: null,
+      release: null,
     };
     const cur = s;
     if (cur.longPress) {
@@ -158,7 +166,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
         if (s === cur && !cur.started) begin(cur);
       }, LONG_PRESS_MS);
     }
-    disarmClickSwallow();
+    clicks.disarm();
     doc.addEventListener('pointermove', onMove);
     doc.addEventListener('pointerup', onUp);
     doc.addEventListener('pointercancel', onCancel);
@@ -207,7 +215,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
     const plan = cur.started && cur.hit ? cur.plan : null;
     const narrow = cur.narrow;
     cleanup();
-    if (cur.started) armClickSwallow(true);
+    if (cur.started) clicks.arm(true);
     if (!plan?.ok || layoutsEqual(plan.layout, list)) return;
     if (narrow) ctx.setNarrowOrder(plan.layout.map((i) => i.id));
     else ctx.commit(plan.layout);
@@ -242,18 +250,8 @@ export function createDrag(ctx: DragContext): DragInteraction {
     cur.ghost = ghost;
     cur.el.classList.add('gm-item--placeholder');
     doc.body.appendChild(ghost);
-    if (cur.pointerId !== undefined && typeof cur.el.setPointerCapture === 'function') {
-      try {
-        cur.el.setPointerCapture(cur.pointerId);
-      } catch {
-        // not an active pointer (synthetic event); document listeners still work
-      }
-    }
-    ctx.container.classList.add('gm-grid--dragging');
-    bodyUserSelect = doc.body.style.userSelect;
-    doc.body.style.userSelect = 'none';
-    doc.addEventListener('selectstart', preventNative);
-    doc.addEventListener('touchmove', preventNative, { passive: false }); // no page scroll mid-drag
+    capturePointer(cur.el, cur.pointerId, true);
+    cur.release = holdGesture(doc, ctx.container, 'gm-grid--dragging'); // no selection, no page scroll
   }
 
   function placeGhost(cur: Session): void {
@@ -372,19 +370,8 @@ export function createDrag(ctx: DragContext): DragInteraction {
     doc.removeEventListener('contextmenu', preventNative);
     cur.el.removeEventListener('dragstart', preventNative);
     if (cur.pressTimer !== null) clearTimeout(cur.pressTimer);
-    if (cur.started) {
-      if (cur.pointerId !== undefined && typeof cur.el.releasePointerCapture === 'function') {
-        try {
-          cur.el.releasePointerCapture(cur.pointerId);
-        } catch {
-          // capture was never taken
-        }
-      }
-      ctx.container.classList.remove('gm-grid--dragging');
-      doc.body.style.userSelect = bodyUserSelect;
-      doc.removeEventListener('selectstart', preventNative);
-      doc.removeEventListener('touchmove', preventNative);
-    }
+    if (cur.started) capturePointer(cur.el, cur.pointerId, false);
+    cur.release?.();
     cur.ghost?.remove();
     cur.el.classList.remove('gm-item--placeholder');
     cur.swapTarget?.classList.remove('gm-item--swap-target', 'gm-item--swap-blocked');
@@ -396,66 +383,14 @@ export function createDrag(ctx: DragContext): DragInteraction {
   function cancel(): void {
     const cur = s;
     cleanup();
-    if (cur?.started) armClickSwallow(false);
+    if (cur?.started) clicks.arm(false);
   }
 
   /** Teardown: abort without arming a click blocker, and drop any armed one. */
   function destroy(): void {
     cleanup();
-    disarmClickSwallow();
+    clicks.disarm();
   }
 
-  // ---- click suppression after a real drag --------------------------------
-  // The release of a drag must not activate buttons/links in the widget. One
-  // capture-phase click listener swallows the next click. It always expires:
-  // - after a pointerup ending the drag: one tick later;
-  // - after a cancel while the pointer is still down: one tick after that
-  //   pointer's pointerup, immediately on pointercancel (no click follows) or on
-  //   any new pointerdown (a new gesture), and at the latest after PENDING_CAP_MS.
-  const PENDING_CAP_MS = 1000;
-  let swallowArmed = false;
-  let swallowTimer: ReturnType<typeof setTimeout> | null = null;
-
-  function swallowClick(e: Event): void {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    disarmClickSwallow();
-  }
-
-  function expireAfterRelease(): void {
-    removePendingListeners();
-    if (swallowTimer !== null) clearTimeout(swallowTimer);
-    swallowTimer = setTimeout(disarmClickSwallow, 0);
-  }
-
-  function removePendingListeners(): void {
-    doc.removeEventListener('pointerup', expireAfterRelease, true);
-    doc.removeEventListener('pointercancel', disarmClickSwallow, true);
-    doc.removeEventListener('pointerdown', disarmClickSwallow, true);
-  }
-
-  function armClickSwallow(released: boolean): void {
-    disarmClickSwallow();
-    swallowArmed = true;
-    doc.addEventListener('click', swallowClick, true);
-    if (released) {
-      swallowTimer = setTimeout(disarmClickSwallow, 0);
-      return;
-    }
-    doc.addEventListener('pointerup', expireAfterRelease, true);
-    doc.addEventListener('pointercancel', disarmClickSwallow, true);
-    doc.addEventListener('pointerdown', disarmClickSwallow, true);
-    swallowTimer = setTimeout(disarmClickSwallow, PENDING_CAP_MS);
-  }
-
-  function disarmClickSwallow(): void {
-    if (!swallowArmed) return;
-    swallowArmed = false;
-    doc.removeEventListener('click', swallowClick, true);
-    removePendingListeners();
-    if (swallowTimer !== null) clearTimeout(swallowTimer);
-    swallowTimer = null;
-  }
-
-  return { bind, unbind, cancel, sync, destroy };
+  return { bind, unbind, cancel, sync, destroy, isActive: () => s !== null };
 }

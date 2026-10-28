@@ -3,6 +3,7 @@ import { addItem as engineAddItem, removeItem as engineRemoveItem } from '../eng
 import { layoutsEqual, normalizeLayout } from '../engine/normalize.js';
 import type { DropMode, DropResult, LayoutItem, PlacedItem, RejectReason } from '../engine/types.js';
 import { createDrag } from './drag.js';
+import { createResize } from './resize.js';
 
 export interface GridOptions {
   columns: number;
@@ -63,6 +64,12 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
   }
 
   // ---- interactions --------------------------------------------------------
+  function commit(next: LayoutItem[]): void {
+    layout = next;
+    render();
+    emit();
+  }
+  // Only one interaction at a time: each refuses to start while the other is active.
   const drag = createDrag({
     container,
     marker,
@@ -70,21 +77,29 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     isNarrow: () => narrow,
     getList: () => (narrow ? narrowList() : layout),
     config,
-    commit(next) {
-      layout = next;
-      render();
-      emit();
-    },
+    commit,
     setNarrowOrder(ids) {
       narrowOrder = ids;
       render();
     },
+    isBusy: () => resize.isActive(),
+  });
+  const resize = createResize({
+    container,
+    items,
+    isNarrow: () => narrow,
+    getLayout: () => layout,
+    config,
+    metrics: () => ({ rowHeight: opts.rowHeight ?? 80, gap: opts.gap ?? 8 }),
+    commit,
+    isBusy: () => drag.isActive(),
   });
   // Cancel any active drag or resize. Called from setLayout, setOptions, addItem,
   // removeItem and from render when the view flips between wide and narrow
-  // (destroy uses drag.destroy(), which also drops any pending click blocker).
+  // (destroy uses drag.destroy() / resize.destroy(), which also drop any pending click blocker).
   function cancelInteraction(): void {
     drag.cancel();
+    resize.cancel();
   }
   // Called once per element when it becomes managed (or is rebound under a new id).
   function bindItem(el: HTMLElement, id: string): void {
@@ -93,6 +108,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
   // Called when an element leaves the managed set or before it is rebound.
   function unbindItem(el: HTMLElement): void {
     drag.unbind(el);
+    resize.unbind(el);
   }
   // ---------------------------------------------------------------------------
 
@@ -184,6 +200,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       } else if (!handle) {
         const h = document.createElement('div');
         h.className = 'gm-resize-handle';
+        h.style.touchAction = 'none'; // touch resize starts at once; no long-press, no page scroll
         node.appendChild(h);
       }
     }
@@ -249,6 +266,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       if (destroyed) return;
       destroyed = true;
       drag.destroy(); // like cancelInteraction, but leaves no click blocker behind
+      resize.destroy(); // also removes the delegated pointerdown listener
       observer?.disconnect();
       for (const node of Array.from(bound.keys())) {
         unbindItem(node);
