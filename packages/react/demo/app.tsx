@@ -10,9 +10,11 @@ export function App() {
   const grid = useRef<GridHandle>(null);
   const [layout, setLayout] = useState<LayoutItem[]>(() => structuredClone(DEFAULT_LAYOUT));
   const [mode, setMode] = useState<DropMode>('insert');
+  /** Clicked blocks get a "selected" class: a runtime className change on a Widget. */
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [limit, setLimit] = useState(false);
   const [narrow, setNarrow] = useState(false);
-  const [status, setStatus] = useState('Ready.');
+  const [status, setStatus] = useState('Ready. Click a block to select it.');
   /** Content for blocks added at runtime; the layout JSON stays content-free. */
   const [extra, setExtra] = useState<Record<string, Block>>({});
   const nextId = useRef(1);
@@ -49,6 +51,16 @@ export function App() {
   };
 
   const onReject = (reason: RejectReason) => setStatus(`Add refused: ${reason}`);
+
+  const toggleSelected = (id: string, target: EventTarget) => {
+    // Clicks on the block's own controls don't select it.
+    if (target instanceof Element && target.closest('input, button, select, textarea, [data-grid-handle], .gm-resize-handle')) return;
+    setSelected((s) => {
+      const next = new Set(s);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  };
 
   return (
     <>
@@ -100,8 +112,11 @@ export function App() {
                 <Widget
                   key={item.id}
                   id={item.id}
-                  className={item.locked ? 'block locked' : 'block'}
+                  className={['block', item.locked && 'locked', selected.has(item.id) && 'selected']
+                    .filter(Boolean)
+                    .join(' ')}
                   style={{ background: b.color }}
+                  onClick={(e) => toggleSelected(item.id, e.target)}
                 >
                   <header className="block-head">
                     <strong>{b.title}</strong>

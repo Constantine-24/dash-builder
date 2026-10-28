@@ -54,6 +54,12 @@ main {
   ) !important;
 }
 
+/* Toggled by clicking a block: a runtime className change on a Widget. */
+.block.selected {
+  outline: 3px solid #2563eb;
+  outline-offset: -3px;
+}
+
 .block-head {
   display: flex;
   justify-content: space-between;
