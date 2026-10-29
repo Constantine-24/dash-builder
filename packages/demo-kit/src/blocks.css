@@ -1,0 +1,92 @@
+/* Block content styles. Colours come from theme.css; each block sets --block-accent. */
+.demo-block {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  position: relative;
+  background: var(--site-bg);
+  color: var(--site-fg);
+  font-family: var(--site-font);
+  border: 1px solid var(--site-border);
+  border-top: 3px solid var(--block-accent, var(--site-border));
+  border-radius: var(--site-radius);
+  cursor: grab;
+}
+
+.demo-block--locked {
+  cursor: not-allowed;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--site-bg) 0 8px,
+    var(--site-accent-soft) 8px 16px
+  );
+}
+
+.demo-block--selected {
+  outline: 2px solid var(--site-accent);
+  outline-offset: -2px;
+  background: var(--site-accent-soft);
+}
+
+.demo-block__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--site-muted);
+}
+
+.demo-block__value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--block-accent, var(--site-fg));
+}
+
+.demo-block__chart {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  color: var(--block-accent, var(--site-accent));
+}
+
+.demo-block__grip {
+  align-self: flex-start;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--site-bg);
+  background: var(--block-accent, var(--site-accent));
+  border-radius: calc(var(--site-radius) / 2);
+  cursor: grab;
+  user-select: none;
+}
+
+.demo-block__form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.demo-block__form input,
+.demo-block__form textarea {
+  font: inherit;
+  padding: 4px 8px;
+  color: var(--site-fg);
+  background: var(--site-bg);
+  border: 1px solid var(--site-border);
+  border-radius: calc(var(--site-radius) / 2);
+}
+
+.demo-block__form input:focus-visible,
+.demo-block__form textarea:focus-visible {
+  outline: 2px solid var(--site-accent);
+  outline-offset: 1px;
+}
