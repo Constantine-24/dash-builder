@@ -8,6 +8,7 @@
     "build": "ng build grid-angular && ng build demo",
     "start": "ng build grid-angular && ng serve demo",
     "test": "ng test grid-angular --watch=false",
+    "build:site-demo": "ng build site-demo",
     "typecheck": "tsc --noEmit -p projects/grid-angular/tsconfig.lib.json",
     "test:smoke": "pnpm build && node scripts/smoke.mjs"
   },
@@ -24,6 +25,7 @@
     "@angular/cli": "22.2.4",
     "@angular/compiler-cli": "^22.2.0",
     "@grid-master/core": "workspace:*",
+    "@grid-master/demo-kit": "workspace:*",
     "happy-dom": "^21.0.4",
     "ng-packagr": "^22.2.0",
     "typescript": "~6.0.2",

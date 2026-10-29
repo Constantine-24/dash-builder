@@ -1,0 +1,22 @@
+<div class="segmented" role="radiogroup" aria-label="Drop mode" (keydown)="onKeyDown($event)">
+  @for (m of modes; track m.mode; let i = $index) {
+    <button
+      #radio
+      type="button"
+      role="radio"
+      class="segmented__option"
+      [attr.aria-checked]="i === modeIndex()"
+      [tabindex]="i === modeIndex() ? 0 : -1"
+      (click)="select(i)"
+    >
+      {{ m.label }}
+    </button>
+  }
+</div>
+<p class="hero-hint" aria-live="polite">{{ current().hint }}</p>
+<gm-grid [columns]="4" [rowHeight]="72" [gap]="10" [(layout)]="layout" [dropMode]="current().mode">
+  @for (item of layout(); track item.id) {
+    <div [gmWidget]="item.id" [demoBlock]="item.id" [locked]="item.locked === true"></div>
+  }
+</gm-grid>
+<p class="angular-app__caption">Built with @grid-master/angular</p>

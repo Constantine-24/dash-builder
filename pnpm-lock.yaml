@@ -41,6 +41,9 @@ importers:
       '@grid-master/core':
         specifier: workspace:*
         version: link:../core
+      '@grid-master/demo-kit':
+        specifier: workspace:*
+        version: link:../demo-kit
       happy-dom:
         specifier: ^21.0.4
         version: 21.0.4
