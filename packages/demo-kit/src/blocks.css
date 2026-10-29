@@ -38,6 +38,12 @@
   background: var(--site-accent-soft);
 }
 
+/* Tinted backgrounds: keep muted text at 4.5:1 or more. */
+.demo-block--locked,
+.demo-block--selected {
+  --site-muted: var(--site-muted-strong);
+}
+
 .demo-block__title {
   margin: 0;
   font-size: 12px;

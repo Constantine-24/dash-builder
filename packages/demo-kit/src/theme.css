@@ -2,6 +2,8 @@
   --site-bg: #ffffff;
   --site-fg: #0f172a;
   --site-muted: #64748b;
+  /* muted text on tinted backgrounds (#f1f5f9, #eff6ff), where #64748b falls below 4.5:1 */
+  --site-muted-strong: #475569;
   --site-border: #e2e8f0;
   --site-accent: #2563eb;
   --site-accent-soft: #eff6ff;

@@ -34,7 +34,7 @@ export const BLOCKS: Readonly<Record<string, BlockInfo>> = {
     items: ['Review pull requests', 'Ship the release', 'Update the docs', 'Reply to feedback'],
   },
   map: { title: 'Drag by the handle', kind: 'map', accent: '#db2777' },
-  contact: { title: 'Contact', kind: 'form', accent: '#0891b2' },
+  contact: { title: 'Contact', kind: 'form', accent: '#0e7490' },
   notes: { title: 'Notes', kind: 'note', accent: '#64748b', value: 'Drag me, resize me, drop me anywhere.' },
 };
 

@@ -45,6 +45,13 @@ describe('MODES', () => {
       expect(m.hint.length).toBeLessThanOrEqual(140);
     }
   });
+
+  it('block and shrink hints say when a drop is refused (core README "Drop modes")', () => {
+    const hint = (mode: string) => MODES.find((m) => m.mode === mode)!.hint;
+    expect(hint('block')).toMatch(/refused/);
+    expect(hint('shrink')).toMatch(/refused/);
+    for (const m of MODES) expect(m.hint.split(/[.!?](?:\s|$)/).filter(Boolean)).toHaveLength(1);
+  });
 });
 
 describe('site config', () => {
