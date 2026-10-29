@@ -1,6 +1,7 @@
 import { computeFlow, createGrid, totalRows } from '@grid-master/core';
 import type { GridController, LayoutItem } from '@grid-master/core';
 import { DEMO_LAYOUT, MODES } from '@grid-master/demo-kit';
+import { createModeSwitch } from './mode-switch.js';
 import { renderBlock } from './blocks-dom.js';
 
 const COLUMNS = 4;
@@ -31,7 +32,10 @@ function toggle(label: string): { label: HTMLLabelElement; input: HTMLInputEleme
 }
 
 /** Builds the hero (headline, drop-mode switch, hint, live grid, toggles) inside `root`. */
-export function mountHero(root: HTMLElement): { grid: GridController; destroy(): void } {
+export function mountHero(
+  root: HTMLElement,
+  options: { onLayoutChange?: (layout: LayoutItem[]) => void } = {},
+): { grid: GridController; destroy(): void } {
   const abort = new AbortController();
   const { signal } = abort;
 
@@ -46,16 +50,10 @@ export function mountHero(root: HTMLElement): { grid: GridController; destroy():
   );
 
   // Drop-mode segmented control
-  const group = el('div', 'segmented');
-  group.setAttribute('role', 'radiogroup');
-  group.setAttribute('aria-label', 'Drop mode');
-  const radios = MODES.map((m) => {
-    const b = el('button', 'segmented__option', m.label);
-    b.type = 'button';
-    b.setAttribute('role', 'radio');
-    return b;
-  });
-  group.append(...radios);
+  const group = createModeSwitch((mode, index) => {
+    hint.textContent = MODES[index]!.hint;
+    grid.setOptions({ dropMode: mode });
+  }, signal);
   const hint = el('p', 'hero-hint');
   hint.setAttribute('aria-live', 'polite');
 
@@ -93,51 +91,11 @@ export function mountHero(root: HTMLElement): { grid: GridController; destroy():
     dropMode: MODES[0]!.mode,
     rowHeight: ROW_HEIGHT,
     gap: GAP,
-    onLayoutChange: applyLock,
-  });
-
-  function select(index: number, focus = false): void {
-    radios.forEach((r, i) => {
-      r.setAttribute('aria-checked', String(i === index));
-      r.tabIndex = i === index ? 0 : -1;
-    });
-    hint.textContent = MODES[index]!.hint;
-    grid.setOptions({ dropMode: MODES[index]!.mode });
-    if (focus) radios[index]!.focus();
-  }
-  const selected = () => radios.findIndex((r) => r.getAttribute('aria-checked') === 'true');
-
-  radios.forEach((r, i) => r.addEventListener('click', () => select(i), { signal }));
-  group.addEventListener(
-    'keydown',
-    (e) => {
-      const n = radios.length;
-      const from = radios.indexOf(e.target as HTMLButtonElement);
-      if (from < 0) return;
-      let to: number;
-      switch (e.key) {
-        case 'ArrowRight':
-        case 'ArrowDown':
-          to = (from + 1) % n;
-          break;
-        case 'ArrowLeft':
-        case 'ArrowUp':
-          to = (from + n - 1) % n;
-          break;
-        case 'Home':
-          to = 0;
-          break;
-        case 'End':
-          to = n - 1;
-          break;
-        default:
-          return;
-      }
-      e.preventDefault();
-      select(to, true);
+    onLayoutChange: (layout) => {
+      applyLock(layout);
+      options.onLayoutChange?.(layout);
     },
-    { signal },
-  );
+  });
 
   limit.input.addEventListener('change', () => applyLock(grid.getLayout()), { signal });
   phone.input.addEventListener(
@@ -153,12 +111,13 @@ export function mountHero(root: HTMLElement): { grid: GridController; destroy():
     () => {
       grid.setLayout(cloneLayout());
       applyLock(grid.getLayout());
-      select(0);
+      group.select(0);
+      options.onLayoutChange?.(grid.getLayout());
     },
     { signal },
   );
 
-  select(0);
+  hint.textContent = MODES[0]!.hint;
 
   let destroyed = false;
   return {
