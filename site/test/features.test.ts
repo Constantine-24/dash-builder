@@ -104,6 +104,8 @@ describe('footer', () => {
     await Promise.resolve();
     expect(writeText).toHaveBeenCalledWith('pnpm add @grid-master/core');
     expect(btn.textContent).toBe('Copied');
+    expect(btn.getAttribute('aria-label')).toBe('Copy install command for Vanilla JS');
+    expect(root.querySelector('[role="status"]')!.textContent).toBe('Copied');
     vi.unstubAllGlobals();
   });
 

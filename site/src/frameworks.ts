@@ -24,7 +24,8 @@ function codeBlock(framework: Framework): HTMLElement {
   pre.append(code);
   pre.tabIndex = 0; // keyboard-scrollable
   pre.setAttribute('aria-label', `${TABS.find((t) => t.id === framework)!.label} example code`);
-  wrap.append(pre, copyButton(() => SNIPPETS[framework]));
+  const name = TABS.find((t) => t.id === framework)!.label;
+  wrap.append(pre, copyButton(() => SNIPPETS[framework], { name: `${name} example`, select: code }));
   return wrap;
 }
 
@@ -88,7 +89,6 @@ export function mountFrameworks(root: HTMLElement, site: SiteConfig): { destroy(
   const tabs: HTMLButtonElement[] = [];
   const panels: HTMLElement[] = [];
   const opened = new Set<Framework>();
-  let vanilla: { destroy(): void } | undefined;
 
   const panelsWrap = document.createElement('div');
   panelsWrap.className = 'tab-panels';
@@ -117,9 +117,8 @@ export function mountFrameworks(root: HTMLElement, site: SiteConfig): { destroy(
   root.append(head, list, panelsWrap);
 
   // The Vanilla panel is first and visible from the start, so its grid can measure itself right away.
-  const first = vanillaDemo(abort.signal);
-  vanilla = first;
-  panels[0]!.append(first.el);
+  const vanilla = vanillaDemo(abort.signal);
+  panels[0]!.append(vanilla.el);
   opened.add('vanilla');
 
   function activate(index: number, focus = false): void {
@@ -173,7 +172,7 @@ export function mountFrameworks(root: HTMLElement, site: SiteConfig): { destroy(
       if (destroyed) return;
       destroyed = true;
       abort.abort();
-      vanilla?.destroy();
+      vanilla.destroy();
     },
   };
 }

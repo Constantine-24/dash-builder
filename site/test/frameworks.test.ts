@@ -19,8 +19,6 @@ const iframes = () => [...root.querySelectorAll('iframe')];
 
 beforeEach(() => {
   document.body.innerHTML = '';
-  // iframes are only checked structurally; happy-dom reports that it will not load them
-  vi.spyOn(window.console, 'error').mockImplementation(() => {});
   vi.stubGlobal('requestAnimationFrame', undefined);
   vi.stubGlobal('cancelAnimationFrame', undefined);
   vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1000);

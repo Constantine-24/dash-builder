@@ -6,5 +6,11 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     include: ['test/**/*.test.ts'],
+    // Iframes only need to exist in tests: let them "load" without navigating anywhere.
+    environmentOptions: {
+      happyDOM: {
+        settings: { enableIframePageLoading: true, navigation: { disableChildFrameNavigation: true } },
+      },
+    },
   },
 });

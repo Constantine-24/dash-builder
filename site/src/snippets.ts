@@ -76,11 +76,12 @@ const TOKEN = new RegExp(
  * A tiny tokenizer: wraps comments, strings, tags, attribute names and keywords in
  * `<span class="tok-*">`. The input is escaped first (token by token), so the result is safe HTML.
  */
-export function highlight(code: string, _lang: Lang): string {
+export function highlight(code: string, lang: Lang): string {
   let out = '';
   let last = 0;
   for (const m of code.matchAll(TOKEN)) {
     const kind = Object.entries(m.groups!).find(([, v]) => v !== undefined)![0];
+    if (kind === 'tag' && lang === 'ts') continue; // plain TypeScript has no tags (generics look like them)
     out += escapeHtml(code.slice(last, m.index));
     out += `<span class="tok-${kind}">${escapeHtml(m[0])}</span>`;
     last = m.index! + m[0].length;

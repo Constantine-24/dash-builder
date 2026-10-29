@@ -7,6 +7,15 @@ const INSTALLS = [
   { label: 'React', pkg: '@grid-master/react', cmd: 'pnpm add @grid-master/react @grid-master/core react react-dom' },
 ] as const;
 
+function selectText(node: HTMLElement): void {
+  const selection = window.getSelection?.();
+  if (!selection) return;
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
 /** Copies `text`; uses the async clipboard API and falls back to a hidden textarea. Resolves to success. */
 export async function copyText(text: string): Promise<boolean> {
   try {
@@ -33,24 +42,37 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** A "Copy" button that shows "Copied" for a moment after a successful copy. */
-export function copyButton(getText: () => string, label = 'Copy'): HTMLButtonElement {
+/**
+ * A "Copy" button (plus a polite live region) that shows "Copied" for a moment after a successful copy.
+ * If copying fails, the visible `select` element's text is selected so the person can press Ctrl+C.
+ */
+export function copyButton(getText: () => string, opts: { name: string; select?: HTMLElement }): DocumentFragment {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'copy';
-  btn.textContent = label;
+  btn.textContent = 'Copy';
+  btn.setAttribute('aria-label', `Copy ${opts.name}`);
+  const status = document.createElement('span');
+  status.className = 'sr-only';
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
   let timer: ReturnType<typeof setTimeout> | undefined;
   btn.addEventListener('click', async () => {
     const ok = await copyText(getText());
     clearTimeout(timer);
+    if (!ok && opts.select) selectText(opts.select);
     btn.textContent = ok ? 'Copied' : 'Press Ctrl+C';
+    status.textContent = ok ? 'Copied' : 'Copy failed. The text is selected: press Ctrl+C.';
     btn.classList.toggle('copy--done', ok);
     timer = setTimeout(() => {
-      btn.textContent = label;
+      btn.textContent = 'Copy';
+      status.textContent = '';
       btn.classList.remove('copy--done');
     }, 1800);
   });
-  return btn;
+  const frag = document.createDocumentFragment();
+  frag.append(btn, status);
+  return frag;
 }
 
 function link(href: string, label: string): HTMLAnchorElement {
@@ -76,7 +98,7 @@ export function mountFooter(root: HTMLElement, site: SiteConfig): void {
     label.textContent = i.label;
     const code = document.createElement('code');
     code.textContent = i.cmd;
-    row.append(label, code, copyButton(() => i.cmd));
+    row.append(label, code, copyButton(() => i.cmd, { name: `install command for ${i.label}`, select: code }));
     install.append(row);
   }
 
