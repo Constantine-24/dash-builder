@@ -7,6 +7,13 @@ const INSTALLS = [
   { label: 'React', pkg: '@grid-master/react', cmd: 'pnpm add @grid-master/react @grid-master/core react react-dom' },
 ] as const;
 
+/** The copy shortcut for this platform: Cmd+C on Apple devices, Ctrl+C elsewhere. */
+export function copyShortcut(): string {
+  const nav = (globalThis.navigator ?? {}) as Navigator & { userAgentData?: { platform?: string } };
+  const platform = nav.userAgentData?.platform ?? nav.platform ?? nav.userAgent ?? '';
+  return /mac|iphone|ipad|ipod/i.test(platform) ? 'Cmd+C' : 'Ctrl+C';
+}
+
 function selectText(node: HTMLElement): void {
   const selection = window.getSelection?.();
   if (!selection) return;
@@ -44,7 +51,7 @@ export async function copyText(text: string): Promise<boolean> {
 
 /**
  * A "Copy" button (plus a polite live region) that shows "Copied" for a moment after a successful copy.
- * If copying fails, the visible `select` element's text is selected so the person can press Ctrl+C.
+ * If copying fails, the visible `select` element's text is selected so the person can press Ctrl+C (Cmd+C on a Mac).
  */
 export function copyButton(getText: () => string, opts: { name: string; select?: HTMLElement }): DocumentFragment {
   const btn = document.createElement('button');
@@ -61,8 +68,9 @@ export function copyButton(getText: () => string, opts: { name: string; select?:
     const ok = await copyText(getText());
     clearTimeout(timer);
     if (!ok && opts.select) selectText(opts.select);
-    btn.textContent = ok ? 'Copied' : 'Press Ctrl+C';
-    status.textContent = ok ? 'Copied' : 'Copy failed. The text is selected: press Ctrl+C.';
+    const keys = copyShortcut();
+    btn.textContent = ok ? 'Copied' : `Press ${keys}`;
+    status.textContent = ok ? 'Copied' : `Copy failed. The text is selected: press ${keys}.`;
     btn.classList.toggle('copy--done', ok);
     timer = setTimeout(() => {
       btn.textContent = 'Copy';

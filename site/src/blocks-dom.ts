@@ -56,11 +56,16 @@ export function renderBlock(id: string, locked: boolean): HTMLElement {
   block.style.setProperty('--block-accent', info.accent);
 
   if (info.kind === 'map') {
-    const grip = text('span', 'demo-block__grip', '⠿ drag');
+    const grip = document.createElement('span');
+    grip.className = 'demo-block__grip';
     grip.setAttribute('data-grid-handle', '');
+    const glyph = text('span', '', '⠿');
+    glyph.setAttribute('aria-hidden', 'true');
+    grip.append(glyph, ' drag');
     block.append(grip);
   }
-  block.append(text('h3', 'demo-block__title', info.title));
+  // a styled div, not a heading: block titles would skip heading levels on every page
+  block.append(text('div', 'demo-block__title', info.title));
 
   switch (info.kind) {
     case 'number':

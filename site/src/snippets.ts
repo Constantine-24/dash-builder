@@ -3,7 +3,8 @@ export type Lang = 'html' | 'ts' | 'tsx';
 
 /** Short quickstarts. Each uses the same API as its demo. */
 export const SNIPPETS: Record<Framework, string> = {
-  vanilla: `<div id="grid">
+  vanilla: `<!-- Assumes a bundler such as Vite: bare package imports and the CSS import need one. -->
+<div id="grid">
   <div data-grid-id="revenue">Revenue</div>
   <div data-grid-id="map">
     <span data-grid-handle>drag here</span> Map
@@ -13,6 +14,9 @@ export const SNIPPETS: Record<Framework, string> = {
 <script type="module">
   import { createGrid } from '@grid-master/core';
   import '@grid-master/core/grid.css';
+
+  // Persist the layout however you like; here, in localStorage.
+  const save = (layout) => localStorage.setItem('layout', JSON.stringify(layout));
 
   const grid = createGrid(document.getElementById('grid'), {
     columns: 4,
@@ -35,7 +39,13 @@ export const SNIPPETS: Record<Framework, string> = {
 </gm-grid>`,
   react: `import { useState } from 'react';
 import { Grid, Widget } from '@grid-master/react';
+import type { LayoutItem } from '@grid-master/react';
 import '@grid-master/core/grid.css';
+
+const initial: LayoutItem[] = [
+  { id: 'revenue', w: 2, h: 2 },
+  { id: 'map', w: 2, h: 2 },
+];
 
 export function Dashboard() {
   const [layout, setLayout] = useState(initial);

@@ -22,9 +22,10 @@ function codeBlock(framework: Framework): HTMLElement {
   const code = document.createElement('code');
   code.innerHTML = highlight(SNIPPETS[framework], SNIPPET_LANG[framework]); // escaped by highlight()
   pre.append(code);
-  pre.tabIndex = 0; // keyboard-scrollable
-  pre.setAttribute('aria-label', `${TABS.find((t) => t.id === framework)!.label} example code`);
   const name = TABS.find((t) => t.id === framework)!.label;
+  pre.tabIndex = 0; // keyboard-scrollable
+  pre.setAttribute('role', 'region'); // a named region, so the focusable <pre> is announced
+  pre.setAttribute('aria-label', `${name} example code`);
   wrap.append(pre, copyButton(() => SNIPPETS[framework], { name: `${name} example`, select: code }));
   return wrap;
 }

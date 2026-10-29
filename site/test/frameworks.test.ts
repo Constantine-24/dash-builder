@@ -131,5 +131,9 @@ describe('framework tabs', () => {
     expect(panelOf(tab('Vanilla JS')).querySelector('pre code')!.textContent).toContain('createGrid');
     expect(panelOf(tab('Angular')).querySelector('pre code')!.textContent).toContain('gmWidget');
     expect(panelOf(tab('React')).querySelector('pre code')!.textContent).toContain('Widget.Handle');
+    const pre = panelOf(tab('Vanilla JS')).querySelector('pre')!;
+    expect(pre.getAttribute('role')).toBe('region');
+    expect(pre.getAttribute('aria-label')).toBe('Vanilla JS example code');
+    expect(pre.tabIndex).toBe(0);
   });
 });

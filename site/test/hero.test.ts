@@ -95,6 +95,12 @@ describe('hero', () => {
     }
     expect(el('map').querySelector('[data-grid-handle].demo-block__grip')).not.toBeNull();
     expect(el('revenue').querySelector('[data-grid-handle]')).toBeNull();
+    // the grip glyph is decorative; the handle reads "drag"
+    expect(el('map').querySelector('.demo-block__grip [aria-hidden="true"]')!.textContent).toBe('⠿');
+    expect(el('map').querySelector('.demo-block__grip')!.textContent!.trim()).toBe('⠿ drag');
+    // block titles are not headings (they would skip a level under the h1)
+    expect(grid().querySelector('h2, h3, h4')).toBeNull();
+    expect(el('revenue').querySelector('.demo-block__title')!.textContent).toBe('Revenue');
     expect(el('pinned').classList.contains('demo-block--locked')).toBe(true);
     expect(el('revenue').classList.contains('demo-block--locked')).toBe(false);
     expect(el('contact').querySelector('input')).not.toBeNull();
@@ -140,11 +146,12 @@ describe('hero', () => {
       toggle('Lock row count').dispatchEvent(new Event('change', { bubbles: true }));
     };
     const note = () => $('.tool-note');
-    expect(note().hidden).toBe(true);
+    expect(note().getAttribute('aria-live')).toBe('polite');
+    expect(note().textContent).toBe('');
 
     // Lock on at 6 rows. Moving revenue before notes closes a row (5 rows); the lock re-caps at 5.
     setLock(true);
-    expect(note().hidden).toBe(false);
+    expect(note().textContent).toBe('Drops that would add a row are refused.');
     drag('revenue', 'notes', 0.1);
     expect(order()).toEqual(['users', 'traffic', 'tasks', 'pinned', 'map', 'contact', 'revenue', 'notes']);
     await settle();
@@ -160,7 +167,7 @@ describe('hero', () => {
 
     // Lock off: the same drag is allowed and commits.
     setLock(false);
-    expect(note().hidden).toBe(true);
+    expect(note().textContent).toBe('');
     const finishFree = startDrag('revenue', 'users', 0.1);
     expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
     finishFree();

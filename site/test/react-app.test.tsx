@@ -32,6 +32,8 @@ describe('React tab app', () => {
     const { container } = render(<App />);
     expect(container.querySelectorAll('[data-grid-handle]')).toHaveLength(1);
     expect(container.querySelector('.demo-block--map [data-grid-handle]')).not.toBeNull();
+    expect(container.querySelector('[data-grid-handle] [aria-hidden="true"]')!.textContent).toBe('⠿');
+    expect(container.querySelector('.gm-grid h2, .gm-grid h3')).toBeNull();
   });
 
   it('has an ARIA radiogroup that updates the hint', () => {

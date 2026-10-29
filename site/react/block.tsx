@@ -27,8 +27,12 @@ export function Block({ id, locked }: { id: string; locked: boolean }) {
 
   return (
     <Widget id={id} className={className} style={style}>
-      {info.kind === 'map' && <Widget.Handle className="demo-block__grip">⠿ drag</Widget.Handle>}
-      <h3 className="demo-block__title">{info.title}</h3>
+      {info.kind === 'map' && (
+        <Widget.Handle className="demo-block__grip">
+          <span aria-hidden="true">⠿</span> drag
+        </Widget.Handle>
+      )}
+      <div className="demo-block__title">{info.title}</div>
       {info.kind === 'number' && info.value && <div className="demo-block__value">{info.value}</div>}
       {info.kind === 'note' && info.value && <div className="demo-block__text">{info.value}</div>}
       {info.kind === 'chart' && <Chart />}

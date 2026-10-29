@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { siteConfig } from '@grid-master/demo-kit';
 import { mountFeatures } from '../src/features.js';
-import { mountFooter } from '../src/footer.js';
+import { copyShortcut, mountFooter } from '../src/footer.js';
 import { SNIPPETS, highlight } from '../src/snippets.js';
 
 let root: HTMLElement;
@@ -16,6 +16,7 @@ describe('features', () => {
   test('six cards', () => {
     mountFeatures(root);
     const titles = [...root.querySelectorAll('.feature h3')].map((h) => h.textContent);
+    expect(root.querySelector('.feature__json')!.getAttribute('tabindex')).toBe('0');
     expect(titles).toEqual([
       'Drag handles',
       'Locked widgets',
@@ -61,6 +62,10 @@ describe('snippets', () => {
     expect(SNIPPETS.angular).toContain('gmHandle');
     expect(SNIPPETS.react).toContain('onLayoutChange');
     expect(SNIPPETS.react).toContain('Widget.Handle');
+    // names used in the snippets are declared in them
+    expect(SNIPPETS.react).toMatch(/const initial\b/);
+    expect(SNIPPETS.vanilla).toMatch(/const save\b/);
+    expect(SNIPPETS.vanilla).toMatch(/bundler/);
   });
 });
 
@@ -114,6 +119,16 @@ describe('footer', () => {
     mountFooter(root, base);
     const btn = root.querySelector<HTMLButtonElement>('.copy')!;
     expect(() => btn.click()).not.toThrow();
+    vi.unstubAllGlobals();
+  });
+
+  test('copy shortcut follows the platform', () => {
+    vi.stubGlobal('navigator', { platform: 'MacIntel' });
+    expect(copyShortcut()).toBe('Cmd+C');
+    vi.stubGlobal('navigator', { userAgentData: { platform: 'Windows' } });
+    expect(copyShortcut()).toBe('Ctrl+C');
+    vi.stubGlobal('navigator', {});
+    expect(copyShortcut()).toBe('Ctrl+C');
     vi.unstubAllGlobals();
   });
 });

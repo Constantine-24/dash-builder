@@ -18,9 +18,9 @@ import { CHART_POINTS, blockInfo } from '@grid-master/demo-kit';
   template: `
     @let i = info();
     @if (i.kind === 'map') {
-      <span class="demo-block__grip" gmHandle>⠿ drag</span>
+      <span class="demo-block__grip" gmHandle><span aria-hidden="true">⠿</span> drag</span>
     }
-    <h3 class="demo-block__title">{{ i.title }}</h3>
+    <div class="demo-block__title">{{ i.title }}</div>
     @switch (i.kind) {
       @case ('number') {
         @if (i.value) {

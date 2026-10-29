@@ -148,6 +148,11 @@ html {
   color: var(--site-muted);
 }
 
+/* empty while the lock is off: out of the flex flow (no extra gap) but still rendered, so the live region stays */
+.tool-note:empty {
+  position: absolute;
+}
+
 .hero-tools {
   display: flex;
   flex-wrap: wrap;
@@ -596,6 +601,7 @@ html {
   padding: 0;
   overflow: hidden;
   background: var(--site-bg);
+  container-type: inline-size;
 }
 
 .sr-only {
@@ -608,21 +614,17 @@ html {
   white-space: nowrap;
 }
 
-.demo-area--frame {
-  container-type: inline-size;
-}
-
 .demo-frame {
   display: block;
   width: 100%;
-  height: 740px; /* fits the 8-block dashboard plus its controls at the panel width */
+  height: 660px; /* the 4-column dashboard plus its controls need 612-631px (measured) */
   border: 0;
 }
 
 /* the iframe's own width decides whether its dashboard stacks */
 @container (max-width: 640px) {
   .demo-frame {
-    height: 1500px;
+    height: 1140px; /* the stacked dashboard plus its controls need 1123-1125px (measured, 320-640px wide) */
   }
 }
 

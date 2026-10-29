@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, signal, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChildren } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import type { ElementRef } from '@angular/core';
 import { GmGrid, GmWidget, type LayoutItem } from '@grid-master/angular';
-import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
+import { DEMO_LAYOUT, GRID_OPTIONS, MODES, SITE } from '@grid-master/demo-kit';
 import { DemoBlock } from './block';
 
 @Component({
@@ -18,6 +19,10 @@ export class App {
   protected readonly modeIndex = signal(0);
   protected readonly current = computed(() => MODES[this.modeIndex()]!);
   private readonly radios = viewChildren<ElementRef<HTMLButtonElement>>('radio');
+
+  constructor() {
+    inject(Title).setTitle(`${SITE.name}: Angular demo`);
+  }
 
   protected select(index: number): void {
     this.modeIndex.set(index);

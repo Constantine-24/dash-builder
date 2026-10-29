@@ -24,7 +24,7 @@ const FEATURES: readonly Feature[] = [
   {
     art: 'resize',
     title: 'Resize, same rules',
-    text: 'Resizing follows the same row rules as dragging, so a widget never overlaps another or leaves a gap.',
+    text: 'Resizing follows the same row rules as dragging, so a widget never overlaps another.',
     cells: 4,
   },
   {
@@ -89,6 +89,9 @@ export function mountFeatures(root: HTMLElement): { setLayout(layout: readonly L
       summary.textContent = 'Show the live layout';
       pre = document.createElement('pre');
       pre.className = 'feature__json';
+      pre.tabIndex = 0; // keyboard-scrollable
+      pre.setAttribute('role', 'region');
+      pre.setAttribute('aria-label', 'Live layout JSON');
       pre.textContent = '[]';
       details.append(summary, pre);
       card.append(details);

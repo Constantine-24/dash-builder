@@ -4,6 +4,8 @@ import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
 import { createModeSwitch } from './mode-switch.js';
 import { renderBlock } from './blocks-dom.js';
 
+const LIMIT_NOTE = 'Drops that would add a row are refused.';
+
 const cloneLayout = (): LayoutItem[] => DEMO_LAYOUT.map((i) => ({ ...i }));
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -63,8 +65,8 @@ export function mountHero(
 
   // Toggles
   const limit = toggle('Lock row count');
-  const limitNote = el('span', 'tool-note', 'Drops that would add a row are refused.');
-  limitNote.hidden = true;
+  // Always in the DOM (a live region is only announced reliably if it exists before its text changes).
+  const limitNote = el('span', 'tool-note');
   limitNote.setAttribute('aria-live', 'polite');
   const phone = toggle('Phone preview');
   const reset = el('button', 'button', 'Reset');
@@ -77,7 +79,8 @@ export function mountHero(
   // "Lock row count" caps rows at the current height; re-applied after every layout change while on.
   function applyLock(layout: LayoutItem[]): void {
     const on = limit.input.checked;
-    limitNote.hidden = !on;
+    const note = on ? LIMIT_NOTE : '';
+    if (limitNote.textContent !== note) limitNote.textContent = note;
     grid.setOptions({ maxRows: on ? totalRows(computeFlow(layout, GRID_OPTIONS.columns)) : undefined });
   }
 
