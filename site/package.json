@@ -12,6 +12,8 @@
     "@grid-master/core": "workspace:*",
     "@grid-master/demo-kit": "workspace:*",
     "@grid-master/react": "workspace:*",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

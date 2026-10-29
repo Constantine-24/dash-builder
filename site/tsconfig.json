@@ -8,5 +8,5 @@
     "moduleResolution": "Bundler",
     "types": ["vite/client"]
   },
-  "include": ["src", "test", "vite.config.ts", "vitest.config.ts"]
+  "include": ["src", "react", "test", "vite.config.ts", "vitest.config.ts"]
 }
