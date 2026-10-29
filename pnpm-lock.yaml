@@ -125,6 +125,9 @@ importers:
 
   site:
     devDependencies:
+      '@grid-master/angular-workspace':
+        specifier: workspace:*
+        version: link:../packages/angular
       '@grid-master/core':
         specifier: workspace:*
         version: link:../packages/core

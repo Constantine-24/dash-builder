@@ -5,6 +5,7 @@
     "test": "pnpm -r test",
     "test:smoke": "pnpm -r test:smoke",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "build:site": "pnpm -r build && pnpm --filter @grid-master/site check"
   }
 }
