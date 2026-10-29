@@ -15,8 +15,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: 12.11.2
@@ -25,8 +28,13 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The packages first: the tests import their built dist
+      - run: pnpm -r build
+      - run: pnpm -r test
       # GITHUB_REPOSITORY is set by Actions, so the site gets the /<repo>/ base path
-      - run: pnpm build:site
+      # (the same steps as the root `pnpm build:site`, without building the packages twice)
+      - run: pnpm --filter @grid-master/site build:site
+      - run: pnpm --filter @grid-master/site check
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site/dist
@@ -34,6 +42,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       pages: write
       id-token: write

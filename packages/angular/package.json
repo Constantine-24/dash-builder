@@ -8,7 +8,6 @@
     "build": "ng build grid-angular && ng build demo",
     "start": "ng build grid-angular && ng serve demo",
     "test": "ng test grid-angular --watch=false",
-    "build:site-demo": "ng build site-demo",
     "typecheck": "tsc --noEmit -p projects/grid-angular/tsconfig.lib.json",
     "test:smoke": "pnpm build && node scripts/smoke.mjs"
   },

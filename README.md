@@ -12,7 +12,7 @@ A drag-and-drop grid layout library with a framework-agnostic core and thin wrap
 
 ```sh
 pnpm install
-pnpm build       # build every package (this also builds the demo site, with base `/`)
+pnpm build       # build every package (not the demo site: see below)
 pnpm test        # run all tests
 pnpm typecheck
 ```
@@ -29,7 +29,7 @@ export GITHUB_REPOSITORY=<owner>/<repo>
 pnpm build:site && pnpm --filter @grid-master/site preview
 ```
 
-`pnpm build:site` builds all packages, assembles `site/dist` and runs a dist check. The site base path is
+`pnpm build:site` builds all packages, then assembles `site/dist` (the site's own `build:site` script) and runs a dist check. The site base path is
 `/<repo>/` when `GITHUB_REPOSITORY` is set, otherwise `/`. The same variable adds the GitHub repository link.
 
 Environment variables:
