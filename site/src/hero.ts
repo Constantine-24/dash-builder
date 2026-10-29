@@ -1,4 +1,4 @@
-import { createGrid } from '@grid-master/core';
+import { computeFlow, createGrid, totalRows } from '@grid-master/core';
 import type { GridController, LayoutItem } from '@grid-master/core';
 import { DEMO_LAYOUT, MODES } from '@grid-master/demo-kit';
 import { renderBlock } from './blocks-dom.js';
@@ -6,7 +6,6 @@ import { renderBlock } from './blocks-dom.js';
 const COLUMNS = 4;
 const ROW_HEIGHT = 72;
 const GAP = 10;
-const ROW_LIMIT = 6;
 
 const cloneLayout = (): LayoutItem[] => DEMO_LAYOUT.map((i) => ({ ...i }));
 
@@ -69,14 +68,24 @@ export function mountHero(root: HTMLElement): { grid: GridController; destroy():
   stage.append(frame);
 
   // Toggles
-  const limit = toggle(`Limit to ${ROW_LIMIT} rows`);
+  const limit = toggle('Lock row count');
+  const limitNote = el('span', 'tool-note', 'Drops that would add a row are refused.');
+  limitNote.hidden = true;
+  limitNote.setAttribute('aria-live', 'polite');
   const phone = toggle('Phone preview');
   const reset = el('button', 'button', 'Reset');
   reset.type = 'button';
   const tools = el('div', 'hero-tools');
-  tools.append(limit.label, phone.label, reset);
+  tools.append(limit.label, limitNote, phone.label, reset);
 
   root.append(headline, group, hint, stage, tools);
+
+  // "Lock row count" caps rows at the current height; re-applied after every layout change while on.
+  function applyLock(layout: LayoutItem[]): void {
+    const on = limit.input.checked;
+    limitNote.hidden = !on;
+    grid.setOptions({ maxRows: on ? totalRows(computeFlow(layout, COLUMNS)) : undefined });
+  }
 
   const grid = createGrid(container, {
     columns: COLUMNS,
@@ -84,6 +93,7 @@ export function mountHero(root: HTMLElement): { grid: GridController; destroy():
     dropMode: MODES[0]!.mode,
     rowHeight: ROW_HEIGHT,
     gap: GAP,
+    onLayoutChange: applyLock,
   });
 
   function select(index: number, focus = false): void {
@@ -129,11 +139,7 @@ export function mountHero(root: HTMLElement): { grid: GridController; destroy():
     { signal },
   );
 
-  limit.input.addEventListener(
-    'change',
-    () => grid.setOptions({ maxRows: limit.input.checked ? ROW_LIMIT : undefined }),
-    { signal },
-  );
+  limit.input.addEventListener('change', () => applyLock(grid.getLayout()), { signal });
   phone.input.addEventListener(
     'change',
     () => {
@@ -146,6 +152,7 @@ export function mountHero(root: HTMLElement): { grid: GridController; destroy():
     'click',
     () => {
       grid.setLayout(cloneLayout());
+      applyLock(grid.getLayout());
       select(0);
     },
     { signal },

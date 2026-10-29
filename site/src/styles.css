@@ -231,10 +231,6 @@ a {
   width: 100%;
 }
 
-.demo-block {
-  cursor: grab;
-}
-
 .demo-block__list {
   margin: 0;
   padding-left: 18px;
@@ -263,6 +259,11 @@ a {
 }
 
 /* toggles */
+.tool-note {
+  font-size: 13px;
+  color: var(--site-muted);
+}
+
 .hero-tools {
   display: flex;
   flex-wrap: wrap;

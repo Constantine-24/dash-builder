@@ -134,33 +134,38 @@ describe('hero', () => {
     expect(radio('Block').tabIndex).toBe(-1);
   });
 
-  test('row limit toggle refuses a drop that would add a row', async () => {
-    click(radio('Swap'));
-    // Same two swaps in both runs: the second one needs a 7th row.
-    const run = () => {
-      drag('revenue', 'map');
-      const finish = startDrag('tasks', 'notes');
-      const blocked = el('notes').classList.contains('gm-item--swap-blocked');
-      finish();
-      return { blocked, after: order() };
+  test('lock row count: refuses an insert drop that would add a row; off commits it', async () => {
+    const marker = () => $('.gm-marker');
+    const setLock = (on: boolean) => {
+      toggle('Lock row count').checked = on;
+      toggle('Lock row count').dispatchEvent(new Event('change', { bubbles: true }));
     };
+    const note = () => $('.tool-note');
+    expect(note().hidden).toBe(true);
 
-    const free = run();
-    expect(free.blocked).toBe(false);
-    expect(free.after.indexOf('notes')).toBeLessThan(free.after.indexOf('revenue'));
-
+    // Lock on at 6 rows. Moving revenue before notes closes a row (5 rows); the lock re-caps at 5.
+    setLock(true);
+    expect(note().hidden).toBe(false);
+    drag('revenue', 'notes', 0.1);
+    expect(order()).toEqual(['users', 'traffic', 'tasks', 'pinned', 'map', 'contact', 'revenue', 'notes']);
     await settle();
-    click(resetButton());
-    click(radio('Swap'));
-    toggle('Limit to 6 rows').checked = true;
-    toggle('Limit to 6 rows').dispatchEvent(new Event('change', { bubbles: true }));
 
-    drag('revenue', 'map');
-    expect(order()).toEqual(['map', 'users', 'traffic', 'pinned', 'tasks', 'revenue', 'contact', 'notes']);
-    const finish = startDrag('tasks', 'notes');
-    expect(el('notes').classList.contains('gm-item--swap-blocked')).toBe(true);
+    // Moving revenue back to the front would need a 6th row: refused.
+    const before = order();
+    const finish = startDrag('revenue', 'users', 0.1);
+    expect(marker().hidden).toBe(false);
+    expect(marker().classList.contains('gm-marker--blocked')).toBe(true);
     finish();
-    expect(order()).toEqual(['map', 'users', 'traffic', 'pinned', 'tasks', 'revenue', 'contact', 'notes']);
+    expect(order()).toEqual(before);
+    await settle();
+
+    // Lock off: the same drag is allowed and commits.
+    setLock(false);
+    expect(note().hidden).toBe(true);
+    const finishFree = startDrag('revenue', 'users', 0.1);
+    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+    finishFree();
+    expect(order()[0]).toBe('revenue');
   });
 
   test('phone preview: container narrower than 640 gets gm-grid--narrow', () => {

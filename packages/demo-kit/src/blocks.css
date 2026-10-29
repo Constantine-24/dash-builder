@@ -27,6 +27,11 @@
   );
 }
 
+/* The map block drags by its grip only. */
+.demo-block--map {
+  cursor: default;
+}
+
 .demo-block--selected {
   outline: 2px solid var(--site-accent);
   outline-offset: -2px;
