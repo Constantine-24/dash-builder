@@ -6,13 +6,13 @@ A drag-and-drop grid layout library with a framework-agnostic core and thin wrap
 | --- | --- |
 | [`@grid-master/core`](packages/core/README.md) | Framework-agnostic grid engine (vanilla JS/TS) |
 | [`@grid-master/react`](packages/react/README.md) | React wrapper |
-| `@grid-master/angular` | Angular wrapper (`packages/angular`) |
+| [`@grid-master/angular`](packages/angular/projects/grid-angular/README.md) | Angular wrapper |
 
 ## Development
 
 ```sh
 pnpm install
-pnpm build       # build every package
+pnpm build       # build every package (this also builds the demo site, with base `/`)
 pnpm test        # run all tests
 pnpm typecheck
 ```
@@ -25,7 +25,8 @@ Vanilla JS, Angular and React tabs (the Angular and React demos are served from 
 Build and preview locally:
 
 ```sh
-GITHUB_REPOSITORY=<owner>/<repo> pnpm build:site && pnpm --filter @grid-master/site preview
+export GITHUB_REPOSITORY=<owner>/<repo>
+pnpm build:site && pnpm --filter @grid-master/site preview
 ```
 
 `pnpm build:site` builds all packages, assembles `site/dist` and runs a dist check. The site base path is

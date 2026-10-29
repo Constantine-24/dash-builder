@@ -21,6 +21,7 @@ function run(cmd, args) {
 
 console.log(`Building site with base "${base}"`);
 rmSync(dist, { recursive: true, force: true });
+// Cross-package on purpose: clear the Angular app's output so a stale build is never copied.
 rmSync(angularDist, { recursive: true, force: true });
 
 run('pnpm', ['exec', 'vite', 'build']);

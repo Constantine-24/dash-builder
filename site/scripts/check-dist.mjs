@@ -55,6 +55,11 @@ const escapedBase = base.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 if (!new RegExp(`base\\s*:\\s*["'\`]${escapedBase}["'\`]`).test(bundleText)) {
   fail(`landing JS bundle lacks the inlined site base "${base}"`);
 }
+for (const segment of ['angular', 'react']) {
+  if (!bundleText.includes(`\`${segment}\``) && !bundleText.includes(`"${segment}"`) && !bundleText.includes(`'${segment}'`)) {
+    fail(`landing JS bundle lacks the "${segment}" iframe path segment`);
+  }
+}
 
 if (errors.length) {
   console.error(`check-dist failed (base "${base}"):\n  - ${errors.join('\n  - ')}`);
