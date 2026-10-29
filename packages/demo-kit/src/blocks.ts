@@ -38,6 +38,16 @@ export const BLOCKS: Readonly<Record<string, BlockInfo>> = {
   notes: { title: 'Notes', kind: 'note', accent: '#64748b', value: 'Drag me, resize me, drop me anywhere.' },
 };
 
+/** Grid options every demo grid uses (hero, Vanilla tab, Angular and React apps). */
+export const GRID_OPTIONS: Readonly<{ columns: number; rowHeight: number; gap: number }> = {
+  columns: 4,
+  rowHeight: 72,
+  gap: 10,
+};
+
+/** Polyline points of the decorative chart block, in a `0 0 100 40` viewBox. */
+export const CHART_POINTS = '0,32 12,26 24,29 36,18 48,22 60,12 72,16 84,6 100,10';
+
 const FALLBACK_ACCENT = '#e2e8f0';
 
 export function blockInfo(id: string): BlockInfo {

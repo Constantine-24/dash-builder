@@ -1,16 +1,14 @@
 import type { CSSProperties } from 'react';
 import { Widget } from '@grid-master/react';
-import { blockInfo } from '@grid-master/demo-kit';
-
-const POINTS = '0,32 12,26 24,29 36,18 48,22 60,12 72,16 84,6 100,10';
+import { CHART_POINTS, blockInfo } from '@grid-master/demo-kit';
 
 /** A small decorative area chart; colour comes from `currentColor` (the block accent). */
 function Chart() {
   return (
     <svg className="demo-block__chart" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
-      <polygon points={`${POINTS} 100,40 0,40`} fill="currentColor" opacity="0.12" />
+      <polygon points={`${CHART_POINTS} 100,40 0,40`} fill="currentColor" opacity="0.12" />
       <polyline
-        points={POINTS}
+        points={CHART_POINTS}
         fill="none"
         stroke="currentColor"
         strokeWidth="2"

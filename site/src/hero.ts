@@ -1,12 +1,8 @@
 import { computeFlow, createGrid, totalRows } from '@grid-master/core';
 import type { GridController, LayoutItem } from '@grid-master/core';
-import { DEMO_LAYOUT, MODES } from '@grid-master/demo-kit';
+import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
 import { createModeSwitch } from './mode-switch.js';
 import { renderBlock } from './blocks-dom.js';
-
-const COLUMNS = 4;
-const ROW_HEIGHT = 72;
-const GAP = 10;
 
 const cloneLayout = (): LayoutItem[] => DEMO_LAYOUT.map((i) => ({ ...i }));
 
@@ -82,15 +78,13 @@ export function mountHero(
   function applyLock(layout: LayoutItem[]): void {
     const on = limit.input.checked;
     limitNote.hidden = !on;
-    grid.setOptions({ maxRows: on ? totalRows(computeFlow(layout, COLUMNS)) : undefined });
+    grid.setOptions({ maxRows: on ? totalRows(computeFlow(layout, GRID_OPTIONS.columns)) : undefined });
   }
 
   const grid = createGrid(container, {
-    columns: COLUMNS,
+    ...GRID_OPTIONS,
     layout: cloneLayout(),
     dropMode: MODES[0]!.mode,
-    rowHeight: ROW_HEIGHT,
-    gap: GAP,
     onLayoutChange: (layout) => {
       applyLock(layout);
       options.onLayoutChange?.(layout);

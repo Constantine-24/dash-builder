@@ -9,9 +9,3 @@
   color: var(--site-muted);
   font-size: 12px;
 }
-
-@media (max-width: 720px) {
-  .react-app .hero-hint {
-    min-height: 2.9em;
-  }
-}

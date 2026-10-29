@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, signal, viewChildren } from '@angular/core';
 import type { ElementRef } from '@angular/core';
 import { GmGrid, GmWidget, type LayoutItem } from '@grid-master/angular';
-import { DEMO_LAYOUT, MODES } from '@grid-master/demo-kit';
+import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
 import { DemoBlock } from './block';
 
 @Component({
@@ -13,6 +13,7 @@ import { DemoBlock } from './block';
 })
 export class App {
   protected readonly modes = MODES;
+  protected readonly gridOptions = GRID_OPTIONS;
   protected readonly layout = signal<LayoutItem[]>(structuredClone(DEMO_LAYOUT));
   protected readonly modeIndex = signal(0);
   protected readonly current = computed(() => MODES[this.modeIndex()]!);

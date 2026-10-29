@@ -1,5 +1,5 @@
 import { createGrid } from '@grid-master/core';
-import { DEMO_LAYOUT, MODES } from '@grid-master/demo-kit';
+import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
 import type { SiteConfig } from '@grid-master/demo-kit';
 import { renderBlock } from './blocks-dom.js';
 import { copyButton } from './footer.js';
@@ -42,11 +42,9 @@ function vanillaDemo(signal: AbortSignal): { el: HTMLElement; destroy(): void } 
   for (const item of DEMO_LAYOUT) container.append(renderBlock(item.id, item.locked === true));
 
   const grid = createGrid(container, {
-    columns: 4,
+    ...GRID_OPTIONS,
     layout: DEMO_LAYOUT.map((i) => ({ ...i })),
     dropMode: MODES[0]!.mode,
-    rowHeight: 72,
-    gap: 10,
   });
   const modes = createModeSwitch((mode, index) => {
     hint.textContent = MODES[index]!.hint;

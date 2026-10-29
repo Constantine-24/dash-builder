@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Grid } from '@grid-master/react';
 import type { LayoutItem } from '@grid-master/react';
-import { DEMO_LAYOUT, MODES } from '@grid-master/demo-kit';
+import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
 import { Block } from './block.js';
 
 /** The drop-mode segmented control: same classes and ARIA as the vanilla `createModeSwitch`. */
@@ -68,7 +68,7 @@ export function App() {
       <p className="hero-hint" aria-live="polite">
         {mode.hint}
       </p>
-      <Grid columns={4} rowHeight={72} gap={10} layout={layout} onLayoutChange={setLayout} dropMode={mode.mode}>
+      <Grid {...GRID_OPTIONS} layout={layout} onLayoutChange={setLayout} dropMode={mode.mode}>
         {layout.map((item) => (
           <Block key={item.id} id={item.id} locked={item.locked === true} />
         ))}

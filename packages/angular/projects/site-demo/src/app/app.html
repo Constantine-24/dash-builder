@@ -14,7 +14,13 @@
   }
 </div>
 <p class="hero-hint" aria-live="polite">{{ current().hint }}</p>
-<gm-grid [columns]="4" [rowHeight]="72" [gap]="10" [(layout)]="layout" [dropMode]="current().mode">
+<gm-grid
+  [columns]="gridOptions.columns"
+  [rowHeight]="gridOptions.rowHeight"
+  [gap]="gridOptions.gap"
+  [(layout)]="layout"
+  [dropMode]="current().mode"
+>
   @for (item of layout(); track item.id) {
     <div [gmWidget]="item.id" [demoBlock]="item.id" [locked]="item.locked === true"></div>
   }

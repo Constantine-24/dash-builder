@@ -11,7 +11,8 @@
       "import": "./dist/index.js"
     },
     "./theme.css": "./dist/theme.css",
-    "./blocks.css": "./dist/blocks.css"
+    "./blocks.css": "./dist/blocks.css",
+    "./controls.css": "./dist/controls.css"
   },
   "sideEffects": [
     "*.css"

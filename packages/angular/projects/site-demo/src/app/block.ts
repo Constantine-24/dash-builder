@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { GmHandle } from '@grid-master/angular';
-import { blockInfo } from '@grid-master/demo-kit';
+import { CHART_POINTS, blockInfo } from '@grid-master/demo-kit';
 
 /**
  * Fills one grid widget with `blockInfo(id)`, using the same markup as the vanilla and React blocks.
@@ -69,7 +69,7 @@ export class DemoBlock {
   readonly demoBlock = input.required<string>();
   readonly locked = input(false);
 
-  protected readonly points = '0,32 12,26 24,29 36,18 48,22 60,12 72,16 84,6 100,10';
+  protected readonly points = CHART_POINTS;
   protected readonly areaPoints = `${this.points} 100,40 0,40`;
   protected readonly info = computed(() => blockInfo(this.demoBlock()));
   protected readonly hostClass = computed(

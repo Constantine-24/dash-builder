@@ -1,12 +1,11 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { BLOCKS, DEMO_LAYOUT, MODES } from '@grid-master/demo-kit';
+import { BLOCKS, DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
 import { mountHero } from '../src/hero.js';
 
 const WIDE = 1000;
 const PHONE = 480;
-const ROW_HEIGHT = 72;
-const GAP = 10;
+const { rowHeight: ROW_HEIGHT, gap: GAP } = GRID_OPTIONS;
 
 const PE: typeof MouseEvent = typeof PointerEvent !== 'undefined' ? PointerEvent : MouseEvent;
 

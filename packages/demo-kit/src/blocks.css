@@ -101,3 +101,30 @@
   outline: 2px solid var(--site-accent);
   outline-offset: 1px;
 }
+
+.demo-block__list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--site-fg);
+}
+
+.demo-block__text {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--site-muted);
+}
+
+.demo-block__button {
+  appearance: none;
+  align-self: flex-start;
+  padding: 4px 12px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--site-bg);
+  background: var(--block-accent, var(--site-accent));
+  border: 0;
+  border-radius: calc(var(--site-radius) / 2);
+  cursor: pointer;
+}

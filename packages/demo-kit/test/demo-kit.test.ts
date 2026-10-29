@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCKS, DEMO_LAYOUT, MODES, SITE, blockInfo, docsLinks, nextBlockId, siteConfig } from '../src/index.js';
+import { BLOCKS, CHART_POINTS, DEMO_LAYOUT, GRID_OPTIONS, MODES, SITE, blockInfo, docsLinks, nextBlockId, siteConfig } from '../src/index.js';
 
 describe('demo layout and blocks', () => {
   it('DEMO_LAYOUT ids are unique and each has a BLOCKS entry', () => {
@@ -33,6 +33,19 @@ describe('demo layout and blocks', () => {
     expect(nextBlockId([])).toBe('new-1');
     expect(nextBlockId([{ id: 'new-1', w: 1, h: 1 }])).toBe('new-2');
     expect(nextBlockId([{ id: 'new-2', w: 1, h: 1 }, { id: 'new-1', w: 1, h: 1 }])).toBe('new-3');
+  });
+});
+
+describe('shared grid options and chart', () => {
+  it('GRID_OPTIONS and CHART_POINTS', () => {
+    expect(GRID_OPTIONS).toEqual({ columns: 4, rowHeight: 72, gap: 10 });
+    const points = CHART_POINTS.split(' ').map((p) => p.split(',').map(Number));
+    for (const [x, y] of points) {
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x).toBeLessThanOrEqual(100);
+      expect(y).toBeGreaterThanOrEqual(0);
+      expect(y).toBeLessThanOrEqual(40);
+    }
   });
 });
 
