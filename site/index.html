@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>grid-master: a dashboard grid that stays calm while you drag</title>
+    <meta
+      name="description"
+      content="A dashboard grid for Vanilla JS, Angular and React. Nothing moves until you drop."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='11' height='11' rx='3' fill='%232563eb'/%3E%3Crect x='18' y='3' width='11' height='11' rx='3' fill='%2393b4f5'/%3E%3Crect x='3' y='18' width='11' height='11' rx='3' fill='%2393b4f5'/%3E%3Crect x='18' y='18' width='11' height='11' rx='3' fill='%232563eb'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="nav__inner">
+        <a class="nav__brand" href="#demo" id="brand"></a>
+        <nav class="nav__links" aria-label="Main">
+          <a href="#demo">Demo</a>
+          <a href="#features">Features</a>
+          <a href="#frameworks">Frameworks</a>
+          <a href="#" id="nav-docs" hidden>Docs</a>
+          <a href="#" id="nav-github" class="nav__github" hidden>GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section id="demo" class="section section--hero" aria-label="Demo"></section>
+      <section id="features" class="section"></section>
+      <section id="frameworks" class="section"></section>
+    </main>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
