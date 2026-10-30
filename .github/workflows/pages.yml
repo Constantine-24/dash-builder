@@ -34,6 +34,9 @@ jobs:
       # GITHUB_REPOSITORY is set by Actions, so the site gets the /<repo>/ base path
       # (the same steps as the root `pnpm build:site`, without building the packages twice)
       - run: pnpm --filter @dash-builder/site build:site
+        env:
+          # The packages are on npm, so the site shows the npm links
+          SHOW_NPM: '1'
       - run: pnpm --filter @dash-builder/site check
       - uses: actions/upload-pages-artifact@v5
         with:

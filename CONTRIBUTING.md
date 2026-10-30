@@ -83,4 +83,4 @@ npm trusted publishers can only be added to packages that already exist, so the 
 
 ### GitHub Pages (once)
 
-In the repository **Settings → Pages**, set **Source: GitHub Actions**. `.github/workflows/pages.yml` then deploys the demo site on every push to `main`. After the first npm publish, add `SHOW_NPM=1` to the site build step in `pages.yml` to show the npm links.
+In the repository **Settings → Pages**, set **Source: GitHub Actions**. `.github/workflows/pages.yml` then deploys the demo site on every push to `main`. The site build step in `pages.yml` sets `SHOW_NPM=1`, so the deployed site shows the npm links.
