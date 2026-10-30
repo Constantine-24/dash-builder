@@ -1,5 +1,5 @@
-import { MODES } from '@grid-master/demo-kit';
-import type { DropMode } from '@grid-master/core';
+import { MODES } from '@dash-builder/demo-kit';
+import type { DropMode } from '@dash-builder/core';
 
 export type ModeSwitch = HTMLElement & {
   /** Selects the option at `index` and notifies `onChange`. */

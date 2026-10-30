@@ -1,16 +1,16 @@
-# @grid-master/react
+# @dash-builder/react
 
-React bindings for [`@grid-master/core`](https://www.npmjs.com/package/@grid-master/core), a dashboard grid where widgets flow left to right into a fixed number of columns and can be dragged and resized. The layout is an ordered list: array order is position, there are no x/y coordinates.
+React bindings for [`@dash-builder/core`](https://www.npmjs.com/package/@dash-builder/core), a dashboard grid where widgets flow left to right into a fixed number of columns and can be dragged and resized. The layout is an ordered list: array order is position, there are no x/y coordinates.
 
 Requires React 19. Safe under `<StrictMode>` and for server rendering: the grid touches the DOM only in effects, and React does not re-render while you drag.
 
 ## Install
 
-`react`, `react-dom` and `@grid-master/core` are peer dependencies, so install them together:
+`react`, `react-dom` and `@dash-builder/core` are peer dependencies, so install them together:
 
 ```sh
-pnpm add @grid-master/react @grid-master/core react react-dom
-# or: npm install @grid-master/react @grid-master/core react react-dom
+pnpm add @dash-builder/react @dash-builder/core react react-dom
+# or: npm install @dash-builder/react @dash-builder/core react react-dom
 ```
 
 ## Styles
@@ -18,15 +18,15 @@ pnpm add @grid-master/react @grid-master/core react react-dom
 Import the grid stylesheet once, in your entry file:
 
 ```ts
-import '@grid-master/core/grid.css';
+import '@dash-builder/core/grid.css';
 ```
 
 ## Usage
 
 ```tsx
 import { useState } from 'react';
-import { Grid, Widget, type LayoutItem } from '@grid-master/react';
-import '@grid-master/core/grid.css';
+import { Grid, Widget, type LayoutItem } from '@dash-builder/react';
+import '@dash-builder/core/grid.css';
 
 export function Dashboard() {
   const [layout, setLayout] = useState<LayoutItem[]>([
@@ -48,7 +48,7 @@ export function Dashboard() {
 }
 ```
 
-- `<Grid>` renders the grid container (a `div` with the class `gm-grid` and `display: grid`). Each `<Widget id>` is a widget; the id must match a layout entry.
+- `<Grid>` renders the grid container (a `div` with the class `dash-grid` and `display: grid`). Each `<Widget id>` is a widget; the id must match a layout entry.
 - `Widget.Handle` marks the only element a widget can be dragged by. Without one, the whole widget is the drag surface.
 
 ### Rules
@@ -63,7 +63,7 @@ export function Dashboard() {
 
 ### `<Grid>`
 
-Extra props (`className`, `style`, `data-*`, ...) go to the container `div`. `className` is appended to `gm-grid`; `display: grid` is always applied, so `<Grid hidden>` stays visible: wrap the grid in an element you hide, or hide it with CSS (`display: none !important`).
+Extra props (`className`, `style`, `data-*`, ...) go to the container `div`. `className` is appended to `dash-grid`; `display: grid` is always applied, so `<Grid hidden>` stays visible: wrap the grid in an element you hide, or hide it with CSS (`display: none !important`).
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -81,16 +81,16 @@ Extra props (`className`, `style`, `data-*`, ...) go to the container `div`. `cl
 
 ### `<Widget>` and `Widget.Handle`
 
-`<Widget id>` renders a `div` with the class `gm-item` and `data-grid-id={id}` (not a DOM `id`); `Widget.Handle` renders a `span` with `data-grid-handle`. Other props go to the element, but the grid attributes always win: `className` is appended to `gm-item`.
+`<Widget id>` renders a `div` with the class `dash-item` and `data-grid-id={id}` (not a DOM `id`); `Widget.Handle` renders a `span` with `data-grid-handle`. Other props go to the element, but the grid attributes always win: `className` is appended to `dash-item`.
 
-- Changing a widget's `className` while it is being dragged drops the core's drag-state classes (`gm-item--placeholder`, `gm-item--swap-target`, `gm-item--swap-blocked`) until the pointer moves again (swap target) or the next drag (placeholder). The drag and its drop are not affected.
+- Changing a widget's `className` while it is being dragged drops the core's drag-state classes (`dash-item--placeholder`, `dash-item--swap-target`, `dash-item--swap-blocked`) until the pointer moves again (swap target) or the next drag (placeholder). The drag and its drop are not affected.
 - `dangerouslySetInnerHTML` on a `Widget` is not supported: the grid adds its own resize handle inside the widget, and React's inner HTML replaces the widget's whole content. Set it on an element inside the widget instead.
 
 ### Adding widgets: use the ref
 
 ```tsx
 import { useRef, useState } from 'react';
-import { Grid, Widget, type GridHandle, type LayoutItem } from '@grid-master/react';
+import { Grid, Widget, type GridHandle, type LayoutItem } from '@dash-builder/react';
 
 export function Dashboard() {
   const grid = useRef<GridHandle>(null);
@@ -131,11 +131,11 @@ When the grid is narrower than `breakpoint` (default 640 px), widgets stack in a
 
 ## Drop modes
 
-`insert`, `block`, `shrink` and `swap` are described in the [core README](https://www.npmjs.com/package/@grid-master/core#drop-modes), together with locked widgets, `maxRows` and the layout JSON format.
+`insert`, `block`, `shrink` and `swap` are described in the [core README](https://www.npmjs.com/package/@dash-builder/core#drop-modes), together with locked widgets, `maxRows` and the layout JSON format.
 
 ## Demo
 
-From the repository root: `pnpm --filter @grid-master/core build && pnpm --filter @grid-master/react demo`.
+From the repository root: `pnpm --filter @dash-builder/core build && pnpm --filter @dash-builder/react demo`.
 
 ## License
 

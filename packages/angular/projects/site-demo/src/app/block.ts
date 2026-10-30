@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { GmHandle } from '@grid-master/angular';
-import { CHART_POINTS, blockInfo } from '@grid-master/demo-kit';
+import { DashHandle } from '@dash-builder/angular';
+import { CHART_POINTS, blockInfo } from '@dash-builder/demo-kit';
 
 /**
  * Fills one grid widget with `blockInfo(id)`, using the same markup as the vanilla and React blocks.
- * It is an attribute component on the `[gmWidget]` element itself, so that element stays a direct child of
- * `<gm-grid>` and carries the `demo-block` classes.
+ * It is an attribute component on the `[dashWidget]` element itself, so that element stays a direct child of
+ * `<dash-grid>` and carries the `demo-block` classes.
  */
 @Component({
   selector: '[demoBlock]',
-  imports: [GmHandle],
+  imports: [DashHandle],
   host: {
     '[class]': 'hostClass()',
     '[style.--block-accent]': 'info().accent',
@@ -18,7 +18,7 @@ import { CHART_POINTS, blockInfo } from '@grid-master/demo-kit';
   template: `
     @let i = info();
     @if (i.kind === 'map') {
-      <span class="demo-block__grip" gmHandle><span aria-hidden="true">⠿</span> drag</span>
+      <span class="demo-block__grip" dashHandle><span aria-hidden="true">⠿</span> drag</span>
     }
     <div class="demo-block__title">{{ i.title }}</div>
     @switch (i.kind) {

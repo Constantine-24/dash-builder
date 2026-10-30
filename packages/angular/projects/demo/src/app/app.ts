@@ -1,8 +1,8 @@
 import { Component, computed, signal, viewChild } from '@angular/core';
-import { GmGrid, GmHandle, GmWidget, type DropMode, type LayoutItem, type RejectReason } from '@grid-master/angular';
+import { DashGrid, DashHandle, DashWidget, type DropMode, type LayoutItem, type RejectReason } from '@dash-builder/angular';
 import { BLOCKS, DEFAULT_LAYOUT, type Block } from './blocks';
 
-const STORAGE_KEY = 'gm-demo-layout';
+const STORAGE_KEY = 'dash-demo-layout';
 const COLORS = ['#fde68a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#ddd6fe', '#fed7aa'];
 
 function parseLayout(raw: string | null): LayoutItem[] | null {
@@ -31,12 +31,12 @@ function readSaved(): LayoutItem[] | null {
 
 @Component({
   selector: 'app-root',
-  imports: [GmGrid, GmWidget, GmHandle],
+  imports: [DashGrid, DashWidget, DashHandle],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly grid = viewChild.required(GmGrid);
+  protected readonly grid = viewChild.required(DashGrid);
 
   protected readonly layout = signal<LayoutItem[]>(readSaved() ?? structuredClone(DEFAULT_LAYOUT));
   protected readonly mode = signal<DropMode>('insert');

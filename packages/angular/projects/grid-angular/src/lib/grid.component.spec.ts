@@ -9,16 +9,16 @@ import {
   viewChild,
 } from '@angular/core';
 import { ComponentFixture, ComponentFixtureAutoDetect, TestBed } from '@angular/core/testing';
-import type { DropMode, LayoutItem, RejectReason } from '@grid-master/core';
-import { GmGrid } from './grid.component';
-import { GmWidget } from './widget.directive';
+import type { DropMode, LayoutItem, RejectReason } from '@dash-builder/core';
+import { DashGrid } from './grid.component';
+import { DashWidget } from './widget.directive';
 
 @Component({
-  imports: [GmGrid, GmWidget],
-  template: `<gm-grid [columns]="cols()" [dropMode]="mode()" [maxRows]="maxRows()" [breakpoint]="0" [(layout)]="layout" (layoutChange)="changes.push($event)" (reject)="rejects.push($event)">@for (i of layout(); track i.id) {<div [gmWidget]="i.id">{{ i.id }}</div>}</gm-grid>`,
+  imports: [DashGrid, DashWidget],
+  template: `<dash-grid [columns]="cols()" [dropMode]="mode()" [maxRows]="maxRows()" [breakpoint]="0" [(layout)]="layout" (layoutChange)="changes.push($event)" (reject)="rejects.push($event)">@for (i of layout(); track i.id) {<div [dashWidget]="i.id">{{ i.id }}</div>}</dash-grid>`,
 })
 class Host {
-  readonly grid = viewChild.required(GmGrid);
+  readonly grid = viewChild.required(DashGrid);
   readonly cols = signal(4);
   readonly mode = signal<DropMode>('insert');
   readonly maxRows = signal<number | undefined>(undefined);
@@ -31,8 +31,8 @@ class Host {
 }
 
 @Component({
-  imports: [GmGrid, GmWidget],
-  template: `<gm-grid [columns]="4" [breakpoint]="0" [(layout)]="layout"><div [gmWidget]="ids()[0]">w</div></gm-grid>`,
+  imports: [DashGrid, DashWidget],
+  template: `<dash-grid [columns]="4" [breakpoint]="0" [(layout)]="layout"><div [dashWidget]="ids()[0]">w</div></dash-grid>`,
 })
 class ReIdHost {
   readonly ids = signal(['x']);
@@ -40,11 +40,11 @@ class ReIdHost {
 }
 
 @Component({
-  imports: [GmGrid, GmWidget],
-  template: `<gm-grid columns="2" maxRows="3" rowHeight="50" gap="4" breakpoint="0" [(layout)]="layout">@for (i of layout(); track i.id) {<div [gmWidget]="i.id">{{ i.id }}</div>}</gm-grid>`,
+  imports: [DashGrid, DashWidget],
+  template: `<dash-grid columns="2" maxRows="3" rowHeight="50" gap="4" breakpoint="0" [(layout)]="layout">@for (i of layout(); track i.id) {<div [dashWidget]="i.id">{{ i.id }}</div>}</dash-grid>`,
 })
 class StaticAttrHost {
-  readonly grid = viewChild.required(GmGrid);
+  readonly grid = viewChild.required(DashGrid);
   readonly layout = signal<LayoutItem[]>([
     { id: 'a', w: 1, h: 1 },
     { id: 'b', w: 1, h: 1 },
@@ -64,10 +64,10 @@ const down = (target: EventTarget, x: number, y: number) => fire(target, 'pointe
 const move = (x: number, y: number) => fire(document, 'pointermove', x, y);
 const up = (x: number, y: number) => fire(document, 'pointerup', x, y);
 
-const host = (f: ComponentFixture<unknown>) => f.nativeElement.querySelector('gm-grid') as HTMLElement;
+const host = (f: ComponentFixture<unknown>) => f.nativeElement.querySelector('dash-grid') as HTMLElement;
 const el = (f: ComponentFixture<unknown>, id: string) =>
   host(f).querySelector(`[data-grid-id="${id}"]`) as HTMLElement | null;
-const col = (f: ComponentFixture<unknown>, id: string) => el(f, id)?.style.getPropertyValue('--gm-col') ?? '';
+const col = (f: ComponentFixture<unknown>, id: string) => el(f, id)?.style.getPropertyValue('--dash-col') ?? '';
 const domOrder = (f: ComponentFixture<unknown>) =>
   Array.from(host(f).querySelectorAll('[data-grid-id]')).map((n) => n.getAttribute('data-grid-id'));
 const ids = (l: LayoutItem[]) => l.map((i) => i.id);
@@ -99,10 +99,10 @@ afterEach(async () => {
   await new Promise((r) => setTimeout(r, 0));
 });
 
-describe('gm-grid', () => {
+describe('dash-grid', () => {
   it('positions widgets from the layout', async () => {
     const f = await create(Host);
-    expect(host(f).classList.contains('gm-grid')).toBe(true);
+    expect(host(f).classList.contains('dash-grid')).toBe(true);
     expect(col(f, 'a')).toBe('1 / span 2');
     expect(col(f, 'b')).toBe('3 / span 1');
   });
@@ -111,9 +111,9 @@ describe('gm-grid', () => {
     const f = await create(StaticAttrHost);
     const g = f.componentInstance.grid();
     expect([g.columns(), g.maxRows(), g.rowHeight(), g.gap(), g.breakpoint()]).toEqual([2, 3, 50, 4, 0]);
-    expect(host(f).style.getPropertyValue('--gm-columns')).toBe('2');
-    expect(host(f).style.getPropertyValue('--gm-row-height')).toBe('50px');
-    expect(host(f).style.getPropertyValue('--gm-gap')).toBe('4px');
+    expect(host(f).style.getPropertyValue('--dash-columns')).toBe('2');
+    expect(host(f).style.getPropertyValue('--dash-row-height')).toBe('50px');
+    expect(host(f).style.getPropertyValue('--dash-gap')).toBe('4px');
     expect(col(f, 'c')).toBe('1 / span 1'); // wraps at 2 columns
 
     const unset = await create(Host);
@@ -267,20 +267,20 @@ describe('gm-grid', () => {
     const gridEl = host(f);
     down(el(f, 'a')!, 50, 40);
     move(158, 40);
-    expect(document.querySelector('.gm-ghost')).not.toBeNull();
+    expect(document.querySelector('.dash-ghost')).not.toBeNull();
     f.destroy();
-    expect(document.querySelector('.gm-ghost')).toBeNull();
-    expect(gridEl.classList.contains('gm-grid')).toBe(false);
+    expect(document.querySelector('.dash-ghost')).toBeNull();
+    expect(gridEl.classList.contains('dash-grid')).toBe(false);
   });
 
   it("re-id'd widget rebinds", async () => {
     const f = await create(ReIdHost);
     const w = host(f).querySelector('[data-grid-id]') as HTMLElement;
-    expect(w.style.getPropertyValue('--gm-col')).toBe('');
+    expect(w.style.getPropertyValue('--dash-col')).toBe('');
     f.componentInstance.ids.set(['b']);
     await f.whenStable();
     expect(w.getAttribute('data-grid-id')).toBe('b');
-    expect(w.style.getPropertyValue('--gm-col')).toBe('1 / span 1');
+    expect(w.style.getPropertyValue('--dash-col')).toBe('1 / span 1');
   });
 
   it('core runs outside the Angular zone', async () => {
@@ -294,7 +294,7 @@ describe('gm-grid', () => {
 
 // zone.js is loaded for the whole suite by the unit-test builder (it is a devDependency);
 // test-providers.ts keeps the other specs zoneless, this block opts into zone change detection.
-describe('gm-grid with zone.js', () => {
+describe('dash-grid with zone.js', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideZoneChangeDetection(), { provide: ComponentFixtureAutoDetect, useValue: true }],
@@ -324,7 +324,7 @@ describe('gm-grid with zone.js', () => {
     move(80, 40);
     move(120, 40);
     move(158, 40); // over b
-    expect(document.querySelector('.gm-ghost')).not.toBeNull();
+    expect(document.querySelector('.dash-ghost')).not.toBeNull();
     await settle();
     expect(entered).toBe(0);
     expect(ticks).toBe(0);

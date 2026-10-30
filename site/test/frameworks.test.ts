@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { MODES, siteConfig } from '@grid-master/demo-kit';
+import { MODES, siteConfig } from '@dash-builder/demo-kit';
 import { mountFrameworks } from '../src/frameworks.js';
 import { mountHero } from '../src/hero.js';
 
@@ -98,10 +98,10 @@ describe('framework tabs', () => {
   });
 
   test('base is respected', () => {
-    mount({ ...site, base: '/grid-master/' });
+    mount({ ...site, base: '/dash-builder/' });
     click(tab('Angular'));
     click(tab('React'));
-    expect(iframes().map((f) => f.getAttribute('src'))).toEqual(['/grid-master/angular/', '/grid-master/react/']);
+    expect(iframes().map((f) => f.getAttribute('src'))).toEqual(['/dash-builder/angular/', '/dash-builder/react/']);
   });
 
   test('vanilla panel has its own mode switch independent from the hero', () => {
@@ -116,7 +116,7 @@ describe('framework tabs', () => {
       [...panel.querySelectorAll<HTMLElement>('[role="radio"]')].find((r) => r.textContent?.trim() === label)!;
 
     expect(panel.querySelector('[role="radiogroup"]')).not.toBeNull();
-    expect(panel.querySelector('.gm-grid')).not.toBeNull();
+    expect(panel.querySelector('.dash-grid')).not.toBeNull();
     expect(heroHint()).toBe(MODES[0]!.hint);
     click(radio('Swap'));
     expect(radio('Swap').getAttribute('aria-checked')).toBe('true');
@@ -129,7 +129,7 @@ describe('framework tabs', () => {
   test('each panel shows a highlighted code block', () => {
     mount();
     expect(panelOf(tab('Vanilla JS')).querySelector('pre code')!.textContent).toContain('createGrid');
-    expect(panelOf(tab('Angular')).querySelector('pre code')!.textContent).toContain('gmWidget');
+    expect(panelOf(tab('Angular')).querySelector('pre code')!.textContent).toContain('dashWidget');
     expect(panelOf(tab('React')).querySelector('pre code')!.textContent).toContain('Widget.Handle');
     const pre = panelOf(tab('Vanilla JS')).querySelector('pre')!;
     expect(pre.getAttribute('role')).toBe('region');

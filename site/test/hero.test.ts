@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { BLOCKS, DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
+import { BLOCKS, DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@dash-builder/demo-kit';
 import { mountHero } from '../src/hero.js';
 
 const WIDE = 1000;
@@ -26,14 +26,14 @@ function rect(left: number, top: number, width: number, height: number): DOMRect
   return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON() {} } as DOMRect;
 }
 
-/** Rects derived from the grid's current --gm-col / --gm-row, so they follow every re-render. */
+/** Rects derived from the grid's current --dash-col / --dash-row, so they follow every re-render. */
 function stubRects(container: HTMLElement) {
   const cell = (WIDE - 3 * GAP) / 4;
   container.getBoundingClientRect = () => rect(0, 0, WIDE, 6 * (ROW_HEIGHT + GAP));
   for (const item of Array.from(container.querySelectorAll<HTMLElement>('[data-grid-id]'))) {
     item.getBoundingClientRect = () => {
-      const [c, cs] = item.style.getPropertyValue('--gm-col').split(' / span ').map(Number);
-      const [r, rs] = item.style.getPropertyValue('--gm-row').split(' / span ').map(Number);
+      const [c, cs] = item.style.getPropertyValue('--dash-col').split(' / span ').map(Number);
+      const [r, rs] = item.style.getPropertyValue('--dash-row').split(' / span ').map(Number);
       return rect((c! - 1) * (cell + GAP), (r! - 1) * (ROW_HEIGHT + GAP), cs! * cell + (cs! - 1) * GAP, rs! * ROW_HEIGHT + (rs! - 1) * GAP);
     };
   }
@@ -105,7 +105,7 @@ describe('hero', () => {
     expect(el('revenue').classList.contains('demo-block--locked')).toBe(false);
     expect(el('contact').querySelector('input')).not.toBeNull();
     expect(el('contact').querySelector('button')).not.toBeNull();
-    expect(grid().classList.contains('gm-grid')).toBe(true);
+    expect(grid().classList.contains('dash-grid')).toBe(true);
   });
 
   test('mode switch sets dropMode and the hint', () => {
@@ -140,7 +140,7 @@ describe('hero', () => {
   });
 
   test('lock row count: refuses an insert drop that would add a row; off commits it', async () => {
-    const marker = () => $('.gm-marker');
+    const marker = () => $('.dash-marker');
     const setLock = (on: boolean) => {
       toggle('Lock row count').checked = on;
       toggle('Lock row count').dispatchEvent(new Event('change', { bubbles: true }));
@@ -160,7 +160,7 @@ describe('hero', () => {
     const before = order();
     const finish = startDrag('revenue', 'users', 0.1);
     expect(marker().hidden).toBe(false);
-    expect(marker().classList.contains('gm-marker--blocked')).toBe(true);
+    expect(marker().classList.contains('dash-marker--blocked')).toBe(true);
     finish();
     expect(order()).toEqual(before);
     await settle();
@@ -169,22 +169,22 @@ describe('hero', () => {
     setLock(false);
     expect(note().textContent).toBe('');
     const finishFree = startDrag('revenue', 'users', 0.1);
-    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+    expect(marker().classList.contains('dash-marker--blocked')).toBe(false);
     finishFree();
     expect(order()[0]).toBe('revenue');
   });
 
-  test('phone preview: container narrower than 640 gets gm-grid--narrow', () => {
-    expect(grid().classList.contains('gm-grid--narrow')).toBe(false);
+  test('phone preview: container narrower than 640 gets dash-grid--narrow', () => {
+    expect(grid().classList.contains('dash-grid--narrow')).toBe(false);
     expect(grid().closest('.phone-frame')).toBeNull();
     toggle('Phone preview').checked = true;
     toggle('Phone preview').dispatchEvent(new Event('change', { bubbles: true }));
     expect(grid().closest('.phone-frame')).not.toBeNull();
-    expect(grid().classList.contains('gm-grid--narrow')).toBe(true);
+    expect(grid().classList.contains('dash-grid--narrow')).toBe(true);
     toggle('Phone preview').checked = false;
     toggle('Phone preview').dispatchEvent(new Event('change', { bubbles: true }));
     expect(grid().closest('.phone-frame')).toBeNull();
-    expect(grid().classList.contains('gm-grid--narrow')).toBe(false);
+    expect(grid().classList.contains('dash-grid--narrow')).toBe(false);
   });
 
   test('reset restores DEMO_LAYOUT order and insert mode', async () => {
@@ -199,12 +199,12 @@ describe('hero', () => {
     // the grid really is back in insert mode: dragging revenue onto users inserts instead of swapping
     drag('users', 'revenue', 0.1);
     expect(order().slice(0, 2)).toEqual(['users', 'revenue']);
-    expect(el('users').style.getPropertyValue('--gm-col')).toBe('1 / span 1');
+    expect(el('users').style.getPropertyValue('--dash-col')).toBe('1 / span 1');
   });
 
-  test('destroy() removes listeners and the gm-grid class', () => {
+  test('destroy() removes listeners and the dash-grid class', () => {
     hero.destroy();
-    expect(grid().classList.contains('gm-grid')).toBe(false);
+    expect(grid().classList.contains('dash-grid')).toBe(false);
     click(radio('Swap'));
     expect(radio('Swap').getAttribute('aria-checked')).toBe('false');
     expect($('.hero-hint').textContent).toBe(MODES[0]!.hint);

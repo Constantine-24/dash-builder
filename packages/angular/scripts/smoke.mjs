@@ -7,19 +7,20 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-const mod = await import(new URL('fesm2022/grid-master-angular.mjs', dist).href);
-for (const name of ['GmWidget', 'GmHandle', 'GmGrid']) {
+const mod = await import(new URL('fesm2022/dash-builder-angular.mjs', dist).href);
+for (const name of ['DashWidget', 'DashHandle', 'DashGrid']) {
   if (!(name in mod)) fail(`missing export ${name}`);
 }
 
 if (!existsSync(new URL('LICENSE', dist))) fail('dist/grid-angular/LICENSE is missing');
 
 const pkg = JSON.parse(readFileSync(new URL('package.json', dist), 'utf8'));
-if (pkg.name !== '@grid-master/angular') fail(`unexpected package name ${pkg.name}`);
+if (pkg.name !== '@dash-builder/angular') fail(`unexpected package name ${pkg.name}`);
 const expected = {
   '@angular/common': '^22.0.0',
   '@angular/core': '^22.0.0',
-  '@grid-master/core': '0.x',
+  // The source range; pnpm publish rewrites it to 0.x (pnpm pack:check verifies the tarball)
+  '@dash-builder/core': 'workspace:0.x',
 };
 for (const [dep, range] of Object.entries(expected)) {
   if (pkg.peerDependencies?.[dep] !== range) {

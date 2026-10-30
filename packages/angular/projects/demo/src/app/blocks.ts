@@ -1,4 +1,4 @@
-import type { LayoutItem } from '@grid-master/angular';
+import type { LayoutItem } from '@dash-builder/angular';
 
 export type BlockKind = 'number' | 'chart' | 'list' | 'map' | 'form' | 'note';
 

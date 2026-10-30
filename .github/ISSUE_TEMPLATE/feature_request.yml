@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest an improvement or a new capability
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the use case first; the API can be designed together.
+    validations:
+      required: true
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      multiple: true
+      options: ['@dash-builder/core', '@dash-builder/angular', '@dash-builder/react', 'Not sure']
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API or behaviour
+      render: tsx
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered

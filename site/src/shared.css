@@ -1,6 +1,6 @@
-@import '@grid-master/demo-kit/theme.css';
-@import '@grid-master/demo-kit/blocks.css';
-@import '@grid-master/demo-kit/controls.css';
+@import '@dash-builder/demo-kit/theme.css';
+@import '@dash-builder/demo-kit/blocks.css';
+@import '@dash-builder/demo-kit/controls.css';
 
 *,
 *::before,

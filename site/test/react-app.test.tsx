@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEMO_LAYOUT, MODES } from '@grid-master/demo-kit';
+import { DEMO_LAYOUT, MODES } from '@dash-builder/demo-kit';
 import { App } from '../react/app.js';
 
 let errors: ReturnType<typeof vi.spyOn>;
@@ -23,7 +23,7 @@ describe('React tab app', () => {
         <App />
       </StrictMode>,
     );
-    const ids = Array.from(container.querySelectorAll('.gm-grid > [data-grid-id]')).map((n) => n.getAttribute('data-grid-id'));
+    const ids = Array.from(container.querySelectorAll('.dash-grid > [data-grid-id]')).map((n) => n.getAttribute('data-grid-id'));
     expect(ids).toEqual(DEMO_LAYOUT.map((i) => i.id));
     expect(ids).toHaveLength(8);
   });
@@ -33,7 +33,7 @@ describe('React tab app', () => {
     expect(container.querySelectorAll('[data-grid-handle]')).toHaveLength(1);
     expect(container.querySelector('.demo-block--map [data-grid-handle]')).not.toBeNull();
     expect(container.querySelector('[data-grid-handle] [aria-hidden="true"]')!.textContent).toBe('⠿');
-    expect(container.querySelector('.gm-grid h2, .gm-grid h3')).toBeNull();
+    expect(container.querySelector('.dash-grid h2, .dash-grid h3')).toBeNull();
   });
 
   it('has an ARIA radiogroup that updates the hint', () => {
@@ -61,7 +61,7 @@ describe('React tab app', () => {
 
   it('shows the caption and no add/remove controls', () => {
     render(<App />);
-    expect(screen.getByText(/Built with @grid-master\/react/)).toBeTruthy();
+    expect(screen.getByText(/Built with @dash-builder\/react/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /add|remove/i })).toBeNull();
   });
 });

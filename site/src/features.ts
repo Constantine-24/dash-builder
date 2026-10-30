@@ -1,4 +1,4 @@
-import type { LayoutItem } from '@grid-master/core';
+import type { LayoutItem } from '@dash-builder/core';
 
 interface Feature {
   art: string;

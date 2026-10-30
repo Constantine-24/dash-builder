@@ -1,8 +1,29 @@
 {
-  "name": "@grid-master/react",
+  "name": "@dash-builder/react",
   "version": "0.0.0",
-  "type": "module",
+  "description": "React bindings for @dash-builder/core: a dashboard grid with draggable, resizable widgets in a fixed number of columns.",
   "license": "MIT",
+  "author": "Konstantin Penzin",
+  "homepage": "https://constantine-24.github.io/dash-builder/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Constantine-24/dash-builder.git",
+    "directory": "packages/react"
+  },
+  "bugs": {
+    "url": "https://github.com/Constantine-24/dash-builder/issues"
+  },
+  "keywords": [
+    "dashboard",
+    "grid",
+    "layout",
+    "widgets",
+    "drag-and-drop",
+    "resizable",
+    "draggable",
+    "react"
+  ],
+  "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -14,7 +35,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -25,12 +47,12 @@
     "test:smoke": "pnpm build && node scripts/smoke.mjs"
   },
   "peerDependencies": {
-    "@grid-master/core": "0.x",
+    "@dash-builder/core": "workspace:0.x",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@grid-master/core": "workspace:*",
+    "@dash-builder/core": "workspace:*",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",
@@ -42,5 +64,8 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

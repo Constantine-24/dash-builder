@@ -1,6 +1,6 @@
-import '@grid-master/core/grid.css';
+import '@dash-builder/core/grid.css';
 import './styles.css';
-import { DEMO_LAYOUT, SITE, docsLinks } from '@grid-master/demo-kit';
+import { DEMO_LAYOUT, SITE, docsLinks } from '@dash-builder/demo-kit';
 import { site } from './config.js';
 import { mountFeatures } from './features.js';
 import { mountFooter } from './footer.js';

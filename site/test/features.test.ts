@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { siteConfig } from '@grid-master/demo-kit';
+import { siteConfig } from '@dash-builder/demo-kit';
 import { mountFeatures } from '../src/features.js';
 import { copyShortcut, mountFooter } from '../src/footer.js';
 import { SNIPPETS, highlight } from '../src/snippets.js';
@@ -57,9 +57,9 @@ describe('snippets', () => {
     expect(SNIPPETS.vanilla).toContain('createGrid');
     expect(SNIPPETS.vanilla).toContain('data-grid-handle');
     expect(SNIPPETS.vanilla).toContain('data-grid-id');
-    expect(SNIPPETS.angular).toContain('gmWidget');
+    expect(SNIPPETS.angular).toContain('dashWidget');
     expect(SNIPPETS.angular).toContain('[(layout)]');
-    expect(SNIPPETS.angular).toContain('gmHandle');
+    expect(SNIPPETS.angular).toContain('dashHandle');
     expect(SNIPPETS.react).toContain('onLayoutChange');
     expect(SNIPPETS.react).toContain('Widget.Handle');
     // names used in the snippets are declared in them
@@ -70,25 +70,25 @@ describe('snippets', () => {
 });
 
 describe('footer', () => {
-  const base = siteConfig({ GITHUB_REPOSITORY: 'o/grid-master' });
+  const base = siteConfig({ GITHUB_REPOSITORY: 'o/dash-builder' });
   const hrefs = () => [...root.querySelectorAll('a')].map((a) => a.getAttribute('href'));
 
   test('showNpm false hides npm links; repo links and MIT are shown', () => {
     mountFooter(root, base);
     expect(hrefs().some((h) => h!.includes('npmjs.com'))).toBe(false);
-    expect(hrefs()).toContain('https://github.com/o/grid-master');
+    expect(hrefs()).toContain('https://github.com/o/dash-builder');
     expect(hrefs().some((h) => h!.includes('/blob/main/'))).toBe(true);
     expect(root.textContent).toContain('MIT');
-    expect(root.textContent).toContain('pnpm add @grid-master/core');
-    expect(root.textContent).toContain('pnpm add @grid-master/angular @grid-master/core');
-    expect(root.textContent).toContain('pnpm add @grid-master/react @grid-master/core');
+    expect(root.textContent).toContain('pnpm add @dash-builder/core');
+    expect(root.textContent).toContain('pnpm add @dash-builder/angular @dash-builder/core');
+    expect(root.textContent).toContain('pnpm add @dash-builder/react @dash-builder/core');
   });
 
   test('showNpm true adds npm links', () => {
     mountFooter(root, { ...base, showNpm: true });
-    expect(hrefs()).toContain('https://www.npmjs.com/package/@grid-master/core');
-    expect(hrefs()).toContain('https://www.npmjs.com/package/@grid-master/angular');
-    expect(hrefs()).toContain('https://www.npmjs.com/package/@grid-master/react');
+    expect(hrefs()).toContain('https://www.npmjs.com/package/@dash-builder/core');
+    expect(hrefs()).toContain('https://www.npmjs.com/package/@dash-builder/angular');
+    expect(hrefs()).toContain('https://www.npmjs.com/package/@dash-builder/react');
   });
 
   test('repoUrl null has no GitHub or Docs links', () => {
@@ -107,7 +107,7 @@ describe('footer', () => {
     btn.click();
     await Promise.resolve();
     await Promise.resolve();
-    expect(writeText).toHaveBeenCalledWith('pnpm add @grid-master/core');
+    expect(writeText).toHaveBeenCalledWith('pnpm add @dash-builder/core');
     expect(btn.textContent).toBe('Copied');
     expect(btn.getAttribute('aria-label')).toBe('Copy install command for Vanilla JS');
     expect(root.querySelector('[role="status"]')!.textContent).toBe('Copied');

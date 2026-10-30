@@ -1,5 +1,5 @@
 {
-  "name": "@grid-master/site",
+  "name": "@dash-builder/site",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,10 +12,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
-    "@grid-master/angular-workspace": "workspace:*",
-    "@grid-master/core": "workspace:*",
-    "@grid-master/demo-kit": "workspace:*",
-    "@grid-master/react": "workspace:*",
+    "@dash-builder/angular-workspace": "workspace:*",
+    "@dash-builder/core": "workspace:*",
+    "@dash-builder/demo-kit": "workspace:*",
+    "@dash-builder/react": "workspace:*",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",

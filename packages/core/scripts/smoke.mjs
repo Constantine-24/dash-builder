@@ -7,7 +7,7 @@ if (!existsSync(new URL('../dist/index.js', import.meta.url))) {
   process.exit(1);
 }
 
-const mod = await import('@grid-master/core');
+const mod = await import('@dash-builder/core');
 const expected = [
   'addItem',
   'computeFlow',

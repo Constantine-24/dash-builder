@@ -1,8 +1,31 @@
 {
-  "name": "@grid-master/core",
+  "name": "@dash-builder/core",
   "version": "0.0.0",
-  "type": "module",
+  "description": "Framework-agnostic dashboard grid: draggable, resizable widgets that flow into a fixed number of columns. Zero dependencies.",
   "license": "MIT",
+  "author": "Konstantin Penzin",
+  "homepage": "https://constantine-24.github.io/dash-builder/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Constantine-24/dash-builder.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/Constantine-24/dash-builder/issues"
+  },
+  "keywords": [
+    "dashboard",
+    "grid",
+    "layout",
+    "widgets",
+    "drag-and-drop",
+    "resizable",
+    "draggable",
+    "vanilla",
+    "framework-agnostic",
+    "typescript"
+  ],
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -18,7 +41,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/copy-css.mjs",
@@ -30,5 +54,8 @@
     "happy-dom": "^21.0.4",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

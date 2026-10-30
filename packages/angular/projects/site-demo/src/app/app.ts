@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChildren } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import type { ElementRef } from '@angular/core';
-import { GmGrid, GmWidget, type LayoutItem } from '@grid-master/angular';
-import { DEMO_LAYOUT, GRID_OPTIONS, MODES, SITE } from '@grid-master/demo-kit';
+import { DashGrid, DashWidget, type LayoutItem } from '@dash-builder/angular';
+import { DEMO_LAYOUT, GRID_OPTIONS, MODES, SITE } from '@dash-builder/demo-kit';
 import { DemoBlock } from './block';
 
 @Component({
   selector: 'app-root',
-  imports: [GmGrid, GmWidget, DemoBlock],
+  imports: [DashGrid, DashWidget, DemoBlock],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

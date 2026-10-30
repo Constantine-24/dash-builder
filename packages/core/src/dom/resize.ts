@@ -33,7 +33,7 @@ export interface ResizeInteraction {
   isActive(): boolean;
 }
 
-const HANDLE = '.gm-resize-handle';
+const HANDLE = '.dash-resize-handle';
 const CLICK_SLOP = 4; // px of pointer travel after which the release click is swallowed
 
 interface Session {
@@ -82,7 +82,7 @@ export function createResize(ctx: ResizeContext): ResizeInteraction {
 
     const r = el.getBoundingClientRect();
     const preview = doc.createElement('div');
-    preview.className = 'gm-resize-preview';
+    preview.className = 'dash-resize-preview';
     s = {
       el,
       handle,
@@ -97,7 +97,7 @@ export function createResize(ctx: ResizeContext): ResizeInteraction {
       h: item.h,
       plan: null,
       preview,
-      release: holdGesture(doc, container, 'gm-grid--resizing'),
+      release: holdGesture(doc, container, 'dash-grid--resizing'),
       auto: createAutoScroll(container, (dy) => {
         if (!s) return;
         s.scrolled += dy;
@@ -196,7 +196,7 @@ export function createResize(ctx: ResizeContext): ResizeInteraction {
       width: `${cur.w * colWidth + (cur.w - 1) * gap}px`,
       height: `${cur.h * rowHeight + (cur.h - 1) * gap}px`,
     });
-    p.classList.toggle('gm-resize-preview--blocked', cur.plan !== null && !cur.plan.ok);
+    p.classList.toggle('dash-resize-preview--blocked', cur.plan !== null && !cur.plan.ok);
     if (p.parentElement !== container) container.appendChild(p);
   }
 

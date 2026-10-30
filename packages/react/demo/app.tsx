@@ -54,7 +54,7 @@ export function App() {
 
   const toggleSelected = (id: string, target: EventTarget) => {
     // Clicks on the block's own controls don't select it.
-    if (target instanceof Element && target.closest('input, button, select, textarea, [data-grid-handle], .gm-resize-handle')) return;
+    if (target instanceof Element && target.closest('input, button, select, textarea, [data-grid-handle], .dash-resize-handle')) return;
     setSelected((s) => {
       const next = new Set(s);
       if (!next.delete(id)) next.add(id);

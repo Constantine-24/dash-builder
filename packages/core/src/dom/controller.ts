@@ -16,7 +16,7 @@ export interface GridOptions {
   onLayoutChange?: (layout: LayoutItem[]) => void;
   onReject?: (reason: RejectReason) => void; // called when addItem is refused
   /**
-   * Builds the drag ghost from the widget element. The grid adds `gm-ghost`,
+   * Builds the drag ghost from the widget element. The grid adds `dash-ghost`,
    * positions and sizes it, appends it to body and removes it on drop. Default:
    * a sanitized deep clone (see README).
    */
@@ -56,10 +56,10 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     display: container.style.display,
   };
   const marker = document.createElement('div');
-  marker.className = 'gm-marker';
+  marker.className = 'dash-marker';
   marker.hidden = true;
 
-  container.classList.add('gm-grid');
+  container.classList.add('dash-grid');
   container.style.display = 'grid';
   container.appendChild(marker);
 
@@ -149,7 +149,7 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     for (const [id, node] of winners) {
       if (bound.get(node) !== id) {
         bound.set(node, id);
-        node.classList.add('gm-item');
+        node.classList.add('dash-item');
         bindItem(node, id);
       }
     }
@@ -172,10 +172,10 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
   }
 
   function clearItem(node: HTMLElement): void {
-    node.classList.remove('gm-item');
-    node.style.removeProperty('--gm-col');
-    node.style.removeProperty('--gm-row');
-    node.querySelector(':scope > .gm-resize-handle')?.remove();
+    node.classList.remove('dash-item');
+    node.style.removeProperty('--dash-col');
+    node.style.removeProperty('--dash-row');
+    node.querySelector(':scope > .dash-resize-handle')?.remove();
     unhide(node);
   }
 
@@ -188,10 +188,10 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
     const nextNarrow = measureNarrow();
     if (nextNarrow !== narrow) cancelInteraction(); // axis and drop config differ between views
     narrow = nextNarrow;
-    container.classList.toggle('gm-grid--narrow', narrow);
-    container.style.setProperty('--gm-columns', String(narrow ? 1 : opts.columns));
-    container.style.setProperty('--gm-row-height', `${opts.rowHeight ?? 80}px`);
-    container.style.setProperty('--gm-gap', `${opts.gap ?? 8}px`);
+    container.classList.toggle('dash-grid--narrow', narrow);
+    container.style.setProperty('--dash-columns', String(narrow ? 1 : opts.columns));
+    container.style.setProperty('--dash-row-height', `${opts.rowHeight ?? 80}px`);
+    container.style.setProperty('--dash-gap', `${opts.gap ?? 8}px`);
 
     const placed: PlacedItem[] = narrow ? stackForNarrow(narrowList()) : computeFlow(layout, opts.columns);
     const byId = new Map(placed.map((p) => [p.id, p]));
@@ -199,20 +199,20 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       const p = byId.get(id);
       if (!p) {
         hide(node);
-        node.style.removeProperty('--gm-col');
-        node.style.removeProperty('--gm-row');
-        node.querySelector(':scope > .gm-resize-handle')?.remove();
+        node.style.removeProperty('--dash-col');
+        node.style.removeProperty('--dash-row');
+        node.querySelector(':scope > .dash-resize-handle')?.remove();
         continue;
       }
       unhide(node);
-      node.style.setProperty('--gm-col', `${p.x + 1} / span ${p.w}`);
-      node.style.setProperty('--gm-row', `${p.y + 1} / span ${p.h}`);
-      const handle = node.querySelector(':scope > .gm-resize-handle');
+      node.style.setProperty('--dash-col', `${p.x + 1} / span ${p.w}`);
+      node.style.setProperty('--dash-row', `${p.y + 1} / span ${p.h}`);
+      const handle = node.querySelector(':scope > .dash-resize-handle');
       if (p.locked) {
         handle?.remove();
       } else if (!handle) {
         const h = document.createElement('div');
-        h.className = 'gm-resize-handle';
+        h.className = 'dash-resize-handle';
         h.style.touchAction = 'none'; // touch resize starts at once; no long-press, no page scroll
         node.appendChild(h);
       }
@@ -317,9 +317,9 @@ export function createGrid(container: HTMLElement, options: GridOptions): GridCo
       bound.clear();
       items.clear();
       marker.remove();
-      container.classList.remove('gm-grid', 'gm-grid--narrow');
+      container.classList.remove('dash-grid', 'dash-grid--narrow');
       container.style.display = prevInline.display;
-      for (const p of ['--gm-columns', '--gm-row-height', '--gm-gap']) container.style.removeProperty(p);
+      for (const p of ['--dash-columns', '--dash-row-height', '--dash-gap']) container.style.removeProperty(p);
     },
   };
 }

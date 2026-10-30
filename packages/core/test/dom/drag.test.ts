@@ -32,10 +32,10 @@ const PE: typeof MouseEvent = typeof PointerEvent !== 'undefined' ? PointerEvent
 
 let container: HTMLElement;
 const el = (id: string) => container.querySelector(`[data-grid-id="${id}"]`) as HTMLElement;
-const col = (id: string) => el(id).style.getPropertyValue('--gm-col');
-const row = (id: string) => el(id).style.getPropertyValue('--gm-row');
-const marker = () => container.querySelector('.gm-marker') as HTMLElement;
-const ghost = () => document.body.querySelector('.gm-ghost');
+const col = (id: string) => el(id).style.getPropertyValue('--dash-col');
+const row = (id: string) => el(id).style.getPropertyValue('--dash-row');
+const marker = () => container.querySelector('.dash-marker') as HTMLElement;
+const ghost = () => document.body.querySelector('.dash-ghost');
 const order = (layout: LayoutItem[]) => layout.map((i) => i.id);
 
 function rect(b: Box): DOMRect {
@@ -99,7 +99,7 @@ describe('drag', () => {
     move(150, 40);
     const g = ghost() as HTMLElement;
     expect(g).not.toBeNull();
-    expect(g.classList.contains('gm-ghost')).toBe(true);
+    expect(g.classList.contains('dash-ghost')).toBe(true);
     expect(g.style.position).toBe('fixed');
     expect(g.style.pointerEvents).toBe('none');
     expect(g.style.width).toBe('208px');
@@ -108,9 +108,9 @@ describe('drag', () => {
     expect(g.style.left).toBe('50px');
     expect(g.style.top).toBe('0px');
     expect(g.hasAttribute('data-grid-id')).toBe(false);
-    expect(el('C').classList.contains('gm-item--placeholder')).toBe(true);
+    expect(el('C').classList.contains('dash-item--placeholder')).toBe(true);
     expect(marker().hidden).toBe(false);
-    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+    expect(marker().classList.contains('dash-marker--blocked')).toBe(false);
     expect(snapshot(['A', 'B', 'D'])).toEqual(before);
     expect(onLayoutChange).not.toHaveBeenCalled();
 
@@ -118,7 +118,7 @@ describe('drag', () => {
     expect(onLayoutChange).toHaveBeenCalledTimes(1);
     expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['A', 'C', 'B', 'D']);
     expect(ghost()).toBeNull();
-    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(el('C').classList.contains('dash-item--placeholder')).toBe(false);
     expect(marker().hidden).toBe(true);
   });
 
@@ -138,11 +138,11 @@ describe('drag', () => {
     down(el('C'), 100, 128);
     move(150, 40);
     expect(marker().hidden).toBe(false);
-    expect(marker().classList.contains('gm-marker--blocked')).toBe(true);
+    expect(marker().classList.contains('dash-marker--blocked')).toBe(true);
     up(150, 40);
     expect(onLayoutChange).not.toHaveBeenCalled();
     expect(ghost()).toBeNull();
-    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+    expect(marker().classList.contains('dash-marker--blocked')).toBe(false);
   });
 
   test('pointerdown/pointerup without movement: no ghost, no emit', () => {
@@ -153,7 +153,7 @@ describe('drag', () => {
     expect(ghost()).toBeNull();
     up(102, 129);
     expect(ghost()).toBeNull();
-    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(el('C').classList.contains('dash-item--placeholder')).toBe(false);
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
 
@@ -175,7 +175,7 @@ describe('drag', () => {
     fire(document, 'pointercancel', 150, 40);
     expect(ghost()).toBeNull();
     expect(marker().hidden).toBe(true);
-    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(el('C').classList.contains('dash-item--placeholder')).toBe(false);
     up(150, 40);
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
@@ -198,7 +198,7 @@ describe('drag', () => {
     move(150, 40);
     g.setLayout(changed);
     expect(ghost()).toBeNull();
-    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(el('C').classList.contains('dash-item--placeholder')).toBe(false);
     expect(marker().hidden).toBe(true);
     up(150, 40);
     expect(onLayoutChange).not.toHaveBeenCalled();
@@ -261,7 +261,7 @@ describe('drag', () => {
     move(150, 40);
     g.destroy();
     expect(ghost()).toBeNull();
-    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(el('C').classList.contains('dash-item--placeholder')).toBe(false);
     up(150, 40);
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
@@ -272,7 +272,7 @@ describe('drag', () => {
     down(el('A'), 50, 40);
     move(300, 128);
     expect(ghost()).toBeNull();
-    expect(el('A').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(el('A').classList.contains('dash-item--placeholder')).toBe(false);
     up(300, 128);
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
@@ -282,7 +282,7 @@ describe('drag', () => {
     const { onLayoutChange } = grid({ layout: L.map((i) => (i.id === 'B' ? { ...i, locked: true } : i)) });
     down(el('D'), 300, 128);
     move(30, 40);
-    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+    expect(marker().classList.contains('dash-marker--blocked')).toBe(false);
     up(30, 40);
     expect(onLayoutChange).toHaveBeenCalledTimes(1);
     expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['D', 'B', 'A', 'C']);
@@ -419,23 +419,23 @@ describe('drag', () => {
     setup(WIDE, 424);
     const onLayoutChange = vi.fn();
     createGrid(container, { columns: 4, layout: L, breakpoint: 400, onLayoutChange });
-    const rh = el('C').querySelector('.gm-resize-handle') as HTMLElement;
+    const rh = el('C').querySelector('.dash-resize-handle') as HTMLElement;
     expect(rh).not.toBeNull();
     down(rh, 200, 160);
     move(150, 40);
     // the pointerdown starts a resize instead
-    expect(document.querySelector('.gm-resize-preview')).not.toBeNull();
+    expect(document.querySelector('.dash-resize-preview')).not.toBeNull();
     expect(ghost()).toBeNull();
-    expect(el('C').classList.contains('gm-item--placeholder')).toBe(false);
+    expect(el('C').classList.contains('dash-item--placeholder')).toBe(false);
     up(200, 160); // released where it started: C keeps its size
-    expect(document.querySelector('.gm-resize-preview')).toBeNull();
+    expect(document.querySelector('.dash-resize-preview')).toBeNull();
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
 
   test('narrow view: reorder re-renders in the new order without emitting; setLayout restores', () => {
     setup(NARROW, 500);
     const { g, onLayoutChange } = grid();
-    expect(container.classList.contains('gm-grid--narrow')).toBe(true);
+    expect(container.classList.contains('dash-grid--narrow')).toBe(true);
     expect(row('D')).toBe('4 / span 1');
     down(el('D'), 200, 300);
     move(200, 20); // top half of A
@@ -455,20 +455,20 @@ describe('drag', () => {
     expect(row('A')).toBe('1 / span 1');
   });
 
-  test('swap mode: target gets gm-item--swap-target and drop emits the swapped order', () => {
+  test('swap mode: target gets dash-item--swap-target and drop emits the swapped order', () => {
     setup();
     const { onLayoutChange } = grid({ dropMode: 'swap' });
     down(el('C'), 100, 128);
     move(50, 40); // over A
-    expect(el('A').classList.contains('gm-item--swap-target')).toBe(true);
+    expect(el('A').classList.contains('dash-item--swap-target')).toBe(true);
     expect(marker().hidden).toBe(true);
     move(300, 40); // over B
-    expect(el('A').classList.contains('gm-item--swap-target')).toBe(false);
-    expect(el('B').classList.contains('gm-item--swap-target')).toBe(true);
+    expect(el('A').classList.contains('dash-item--swap-target')).toBe(false);
+    expect(el('B').classList.contains('dash-item--swap-target')).toBe(true);
     move(50, 40);
     up(50, 40);
     expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['C', 'B', 'A', 'D']);
-    expect(container.querySelector('.gm-item--swap-target')).toBeNull();
+    expect(container.querySelector('.dash-item--swap-target')).toBeNull();
   });
 
   test('sticky marker: a null hit inside the container keeps the last hit', () => {
@@ -478,7 +478,7 @@ describe('drag', () => {
     move(150, 40); // left half of B
     move(150, 120); // over C's own placeholder -> resolveTarget null
     expect(marker().hidden).toBe(false);
-    expect(marker().classList.contains('gm-marker--blocked')).toBe(false);
+    expect(marker().classList.contains('dash-marker--blocked')).toBe(false);
     up(150, 120);
     expect(order(onLayoutChange.mock.calls[0][0])).toEqual(['A', 'C', 'B', 'D']);
   });
@@ -648,12 +648,12 @@ describe('drag', () => {
     el('C').dispatchEvent(pre);
     expect(pre.defaultPrevented).toBe(false);
     move(150, 40);
-    expect(container.classList.contains('gm-grid--dragging')).toBe(true);
+    expect(container.classList.contains('dash-grid--dragging')).toBe(true);
     const sel = new Event('selectstart', { bubbles: true, cancelable: true });
     el('C').dispatchEvent(sel);
     expect(sel.defaultPrevented).toBe(true);
     up(150, 40);
-    expect(container.classList.contains('gm-grid--dragging')).toBe(false);
+    expect(container.classList.contains('dash-grid--dragging')).toBe(false);
     const post = new Event('selectstart', { bubbles: true, cancelable: true });
     el('C').dispatchEvent(post);
     expect(post.defaultPrevented).toBe(false);
@@ -777,7 +777,7 @@ describe('drag', () => {
     move(150, 40);
     expect(hook).toHaveBeenCalledWith(el('C'));
     expect(ghost()).toBe(custom);
-    expect(custom.classList.contains('gm-ghost')).toBe(true);
+    expect(custom.classList.contains('dash-ghost')).toBe(true);
     expect(custom.style.position).toBe('fixed');
     expect(custom.style.width).toBe('208px');
     expect(custom.style.left).toBe('50px');
@@ -812,7 +812,7 @@ describe('drag', () => {
       expect((g.querySelector('input[type="radio"]') as HTMLInputElement).hasAttribute('name')).toBe(false);
       expect((g.querySelector('input[type="text"]') as HTMLInputElement).name).toBe('q');
       expect(g.querySelector('iframe, video, audio')).toBeNull();
-      const boxes = g.querySelectorAll(':scope > div:not(.gm-resize-handle)');
+      const boxes = g.querySelectorAll(':scope > div:not(.dash-resize-handle)');
       expect(boxes.length).toBe(3);
       expect((boxes[0] as HTMLElement).style.width).toBe('120px');
       expect((boxes[0] as HTMLElement).style.height).toBe('60px');
@@ -866,13 +866,13 @@ describe('drag', () => {
   test('grid.css: the ghost opacity variable has a fallback (the ghost lives on body)', async () => {
     const { readFileSync } = await import('node:fs');
     const css = readFileSync('src/styles/grid.css', 'utf8');
-    expect(css).toMatch(/\.gm-ghost\s*{[^}]*opacity:\s*var\(--gm-ghost-opacity,\s*0\.85\)/);
+    expect(css).toMatch(/\.dash-ghost\s*{[^}]*opacity:\s*var\(--dash-ghost-opacity,\s*0\.85\)/);
   });
 
-  test('grid.css has no dead .gm-marker--swap rule', async () => {
+  test('grid.css has no dead .dash-marker--swap rule', async () => {
     const { readFileSync } = await import('node:fs');
     const css = readFileSync('src/styles/grid.css', 'utf8');
-    expect(css).not.toContain('gm-marker--swap');
-    expect(css).toContain('.gm-grid--dragging');
+    expect(css).not.toContain('dash-marker--swap');
+    expect(css).toContain('.dash-grid--dragging');
   });
 });

@@ -12,8 +12,8 @@ export const SNIPPETS: Record<Framework, string> = {
 </div>
 
 <script type="module">
-  import { createGrid } from '@grid-master/core';
-  import '@grid-master/core/grid.css';
+  import { createGrid } from '@dash-builder/core';
+  import '@dash-builder/core/grid.css';
 
   // Persist the layout however you like; here, in localStorage.
   const save = (layout) => localStorage.setItem('layout', JSON.stringify(layout));
@@ -28,19 +28,19 @@ export const SNIPPETS: Record<Framework, string> = {
     onLayoutChange: (layout) => save(layout),
   });
 </script>`,
-  angular: `<!-- imports: GmGrid, GmWidget, GmHandle from '@grid-master/angular' -->
-<gm-grid [columns]="4" dropMode="insert" [(layout)]="layout">
+  angular: `<!-- imports: DashGrid, DashWidget, DashHandle from '@dash-builder/angular' -->
+<dash-grid [columns]="4" dropMode="insert" [(layout)]="layout">
   @for (item of layout(); track item.id) {
-    <div [gmWidget]="item.id">
-      <header gmHandle>{{ item.id }}</header>
+    <div [dashWidget]="item.id">
+      <header dashHandle>{{ item.id }}</header>
       <p>Widget content</p>
     </div>
   }
-</gm-grid>`,
+</dash-grid>`,
   react: `import { useState } from 'react';
-import { Grid, Widget } from '@grid-master/react';
-import type { LayoutItem } from '@grid-master/react';
-import '@grid-master/core/grid.css';
+import { Grid, Widget } from '@dash-builder/react';
+import type { LayoutItem } from '@dash-builder/react';
+import '@dash-builder/core/grid.css';
 
 const initial: LayoutItem[] = [
   { id: 'revenue', w: 2, h: 2 },

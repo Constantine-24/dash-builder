@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
-import { Widget } from '@grid-master/react';
-import { CHART_POINTS, blockInfo } from '@grid-master/demo-kit';
+import { Widget } from '@dash-builder/react';
+import { CHART_POINTS, blockInfo } from '@dash-builder/demo-kit';
 
 /** A small decorative area chart; colour comes from `currentColor` (the block accent). */
 function Chart() {

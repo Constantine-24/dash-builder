@@ -1,10 +1,10 @@
-import { docsLinks } from '@grid-master/demo-kit';
-import type { SiteConfig } from '@grid-master/demo-kit';
+import { docsLinks } from '@dash-builder/demo-kit';
+import type { SiteConfig } from '@dash-builder/demo-kit';
 
 const INSTALLS = [
-  { label: 'Vanilla JS', pkg: '@grid-master/core', cmd: 'pnpm add @grid-master/core' },
-  { label: 'Angular', pkg: '@grid-master/angular', cmd: 'pnpm add @grid-master/angular @grid-master/core' },
-  { label: 'React', pkg: '@grid-master/react', cmd: 'pnpm add @grid-master/react @grid-master/core react react-dom' },
+  { label: 'Vanilla JS', pkg: '@dash-builder/core', cmd: 'pnpm add @dash-builder/core' },
+  { label: 'Angular', pkg: '@dash-builder/angular', cmd: 'pnpm add @dash-builder/angular @dash-builder/core' },
+  { label: 'React', pkg: '@dash-builder/react', cmd: 'pnpm add @dash-builder/react @dash-builder/core react react-dom' },
 ] as const;
 
 /** The copy shortcut for this platform: Cmd+C on Apple devices, Ctrl+C elsewhere. */

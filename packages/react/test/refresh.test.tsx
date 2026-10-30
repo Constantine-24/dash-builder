@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import type { GridController } from '@grid-master/core';
+import type { GridController } from '@dash-builder/core';
 import { Grid, Widget } from '../src/index.js';
 
 /** Every refresh/destroy call on any controller, in order. */
 const calls: string[] = [];
 
-vi.mock('@grid-master/core', async (importOriginal) => {
-  const core = await importOriginal<typeof import('@grid-master/core')>();
+vi.mock('@dash-builder/core', async (importOriginal) => {
+  const core = await importOriginal<typeof import('@dash-builder/core')>();
   return {
     ...core,
     createGrid(...args: Parameters<typeof core.createGrid>): GridController {

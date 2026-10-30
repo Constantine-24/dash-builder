@@ -1,4 +1,4 @@
-import { CHART_POINTS, blockInfo } from '@grid-master/demo-kit';
+import { CHART_POINTS, blockInfo } from '@dash-builder/demo-kit';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 

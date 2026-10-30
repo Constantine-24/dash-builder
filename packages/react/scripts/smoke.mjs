@@ -7,17 +7,17 @@ if (!existsSync(new URL('../dist/index.js', import.meta.url))) {
   process.exit(1);
 }
 
-const mod = await import('@grid-master/react');
+const mod = await import('@dash-builder/react');
 assert.equal(typeof mod.Grid, 'function', 'Grid should be a function');
 assert.equal(typeof mod.Widget, 'function', 'Widget should be a function');
 assert.equal(typeof mod.WidgetHandle, 'function', 'WidgetHandle should be a function');
 assert.equal(mod.Widget.Handle, mod.WidgetHandle, 'Widget.Handle should be WidgetHandle');
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-assert.equal(pkg.name, '@grid-master/react');
+assert.equal(pkg.name, '@dash-builder/react');
 assert.deepEqual(
   pkg.peerDependencies,
-  { '@grid-master/core': '0.x', react: '^19.0.0', 'react-dom': '^19.0.0' },
+  { '@dash-builder/core': 'workspace:0.x', react: '^19.0.0', 'react-dom': '^19.0.0' },
   'peerDependencies should be exactly core, react and react-dom',
 );
 assert.equal(pkg.dependencies, undefined, 'there should be no runtime dependencies');

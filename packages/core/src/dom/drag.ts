@@ -170,7 +170,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
     const b = bindings.get(el);
     const target = e.target instanceof Element ? e.target : null;
     if (!b || !target || !el.contains(target)) return;
-    const resize = target.closest('.gm-resize-handle');
+    const resize = target.closest('.dash-resize-handle');
     if (resize && el.contains(resize)) return;
     const hasHandle = el.querySelector(HANDLE) !== null;
     if (hasHandle) {
@@ -290,7 +290,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
     const r = cur.el.getBoundingClientRect();
     const make = ctx.ghost();
     const ghost = make ? make(cur.el) : defaultGhost(cur.el);
-    ghost.classList.add('gm-ghost');
+    ghost.classList.add('dash-ghost');
     Object.assign(ghost.style, {
       position: 'fixed',
       pointerEvents: 'none',
@@ -299,10 +299,10 @@ export function createDrag(ctx: DragContext): DragInteraction {
       height: `${r.height}px`,
     });
     cur.ghost = ghost;
-    cur.el.classList.add('gm-item--placeholder');
+    cur.el.classList.add('dash-item--placeholder');
     doc.body.appendChild(ghost);
     capturePointer(cur.el, cur.pointerId, true);
-    cur.release = holdGesture(doc, ctx.container, 'gm-grid--dragging'); // no selection, no page scroll
+    cur.release = holdGesture(doc, ctx.container, 'dash-grid--dragging'); // no selection, no page scroll
     cur.auto = createAutoScroll(ctx.container, () => {
       if (s === cur) schedule(cur); // the page moved under a still pointer: hit-test again
     });
@@ -411,16 +411,16 @@ export function createDrag(ctx: DragContext): DragInteraction {
     const m = cur.hit?.marker;
     const swapEl = m?.kind === 'outline' ? ctx.items.get(m.id) ?? null : null;
     if (cur.swapTarget && cur.swapTarget !== swapEl) {
-      cur.swapTarget.classList.remove('gm-item--swap-target', 'gm-item--swap-blocked');
+      cur.swapTarget.classList.remove('dash-item--swap-target', 'dash-item--swap-blocked');
     }
     cur.swapTarget = swapEl;
     if (swapEl) {
-      swapEl.classList.add('gm-item--swap-target');
-      swapEl.classList.toggle('gm-item--swap-blocked', blocked);
+      swapEl.classList.add('dash-item--swap-target');
+      swapEl.classList.toggle('dash-item--swap-blocked', blocked);
     }
     if (m?.kind !== 'line') {
       marker.hidden = true;
-      marker.classList.remove('gm-marker--blocked');
+      marker.classList.remove('dash-marker--blocked');
       return;
     }
     const vertical = m.width === 0;
@@ -430,7 +430,7 @@ export function createDrag(ctx: DragContext): DragInteraction {
       width: `${vertical ? LINE : m.width}px`,
       height: `${vertical ? m.height : LINE}px`,
     });
-    marker.classList.toggle('gm-marker--blocked', blocked);
+    marker.classList.toggle('dash-marker--blocked', blocked);
     marker.hidden = false;
   }
 
@@ -450,10 +450,10 @@ export function createDrag(ctx: DragContext): DragInteraction {
     if (cur.started) capturePointer(cur.el, cur.pointerId, false);
     cur.release?.();
     cur.ghost?.remove();
-    cur.el.classList.remove('gm-item--placeholder');
-    cur.swapTarget?.classList.remove('gm-item--swap-target', 'gm-item--swap-blocked');
+    cur.el.classList.remove('dash-item--placeholder');
+    cur.swapTarget?.classList.remove('dash-item--swap-target', 'dash-item--swap-blocked');
     ctx.marker.hidden = true;
-    ctx.marker.classList.remove('gm-marker--blocked');
+    ctx.marker.classList.remove('dash-marker--blocked');
   }
 
   /** Programmatic / Escape cancel. A started drag whose pointer is still down swallows the click its release makes. */

@@ -69,11 +69,11 @@ describe('MODES', () => {
 
 describe('site config', () => {
   it('derives base, repo url and name from the environment', () => {
-    expect(SITE.name).toBe('grid-master');
-    expect(siteConfig({ GITHUB_REPOSITORY: 'kp/grid-master' })).toEqual({
-      name: 'grid-master',
-      base: '/grid-master/',
-      repoUrl: 'https://github.com/kp/grid-master',
+    expect(SITE.name).toBe('dash-builder');
+    expect(siteConfig({ GITHUB_REPOSITORY: 'kp/dash-builder' })).toEqual({
+      name: 'dash-builder',
+      base: '/dash-builder/',
+      repoUrl: 'https://github.com/kp/dash-builder',
       showNpm: false,
     });
     expect(siteConfig({})).toMatchObject({ base: '/', repoUrl: null, showNpm: false });
@@ -88,10 +88,10 @@ describe('site config', () => {
   });
 
   it('docsLinks', () => {
-    expect(docsLinks('https://github.com/kp/grid-master')).toEqual({
-      core: 'https://github.com/kp/grid-master/blob/main/packages/core/README.md',
-      angular: 'https://github.com/kp/grid-master/blob/main/packages/angular/projects/grid-angular/README.md',
-      react: 'https://github.com/kp/grid-master/blob/main/packages/react/README.md',
+    expect(docsLinks('https://github.com/kp/dash-builder')).toEqual({
+      core: 'https://github.com/kp/dash-builder/blob/main/packages/core/README.md',
+      angular: 'https://github.com/kp/dash-builder/blob/main/packages/angular/projects/grid-angular/README.md',
+      react: 'https://github.com/kp/dash-builder/blob/main/packages/react/README.md',
     });
     expect(docsLinks(null)).toBeNull();
   });

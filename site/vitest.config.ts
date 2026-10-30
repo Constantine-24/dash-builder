@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import { siteConfig } from '@grid-master/demo-kit';
+import { siteConfig } from '@dash-builder/demo-kit';
 
 export default defineConfig({
   define: { __SITE__: JSON.stringify(siteConfig({})) },

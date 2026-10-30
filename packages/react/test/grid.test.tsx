@@ -21,7 +21,7 @@ const up = (x: number, y: number) => act(() => void fire(document, 'pointerup', 
 let root: HTMLElement;
 const grid = () => root.firstElementChild as HTMLElement;
 const el = (id: string) => root.querySelector(`[data-grid-id="${id}"]`) as HTMLElement | null;
-const col = (id: string) => el(id)?.style.getPropertyValue('--gm-col') ?? '';
+const col = (id: string) => el(id)?.style.getPropertyValue('--dash-col') ?? '';
 const domOrder = () => Array.from(grid().querySelectorAll('[data-grid-id]')).map((n) => n.getAttribute('data-grid-id'));
 const ids = (l: LayoutItem[]) => l.map((i) => i.id);
 
@@ -130,7 +130,7 @@ afterEach(async () => {
 describe('Grid', () => {
   it('positions widgets from the layout', () => {
     mount(<Host initial={AB} changes={[]} />);
-    expect(grid().classList.contains('gm-grid')).toBe(true);
+    expect(grid().classList.contains('dash-grid')).toBe(true);
     expect(col('a')).toBe('1 / span 2');
     expect(col('b')).toBe('3 / span 1');
   });
@@ -242,13 +242,13 @@ describe('Grid', () => {
     expect(changes).toEqual([]);
     expect(el('a')).toBeNull();
     expect(col('b')).toBe('1 / span 1');
-    expect(grid().style.getPropertyValue('--gm-columns')).toBe('2');
+    expect(grid().style.getPropertyValue('--dash-columns')).toBe('2');
 
     // growing columns with a wider new layout uses the new column count
     rerender(<Host initial={[{ id: 'b', w: 3, h: 1 }]} columns={4} changes={changes} />);
     expect(changes).toEqual([]);
     expect(col('b')).toBe('1 / span 3');
-    expect(grid().style.getPropertyValue('--gm-columns')).toBe('4');
+    expect(grid().style.getPropertyValue('--dash-columns')).toBe('4');
   });
 
   it('drag works end to end, and again after React reorders the DOM', async () => {
@@ -276,10 +276,10 @@ describe('Grid', () => {
     stubRects(['a', 'b']);
     down(el('b')!, 158, 40);
     move(120, 40); // past the threshold
-    expect(document.querySelector('.gm-ghost.my-ghost')).not.toBeNull();
+    expect(document.querySelector('.dash-ghost.my-ghost')).not.toBeNull();
     act(() => bump()); // also passes a new ghost function
-    expect(document.querySelector('.gm-ghost.my-ghost')).not.toBeNull();
-    expect(document.querySelector('.gm-ghost')).not.toBeNull();
+    expect(document.querySelector('.dash-ghost.my-ghost')).not.toBeNull();
+    expect(document.querySelector('.dash-ghost')).not.toBeNull();
     move(50, 40); // over a
     up(50, 40);
     expect(changes.length).toBe(1);
@@ -295,12 +295,12 @@ describe('Grid', () => {
       </StrictMode>,
     );
     expect(col('a')).toBe('1 / span 1');
-    expect(grid().querySelectorAll('.gm-marker').length).toBe(1);
+    expect(grid().querySelectorAll('.dash-marker').length).toBe(1);
     swap(['a', 'b']);
     expect(changes.length).toBe(1);
     expect(ids(changes[0]!)).toEqual(['b', 'a']);
     expect(domOrder()).toEqual(['b', 'a']);
-    expect(grid().querySelectorAll('.gm-marker').length).toBe(1);
+    expect(grid().querySelectorAll('.dash-marker').length).toBe(1);
   });
 
   it('inline callbacks: no re-create, newest callback wins', () => {
@@ -313,17 +313,17 @@ describe('Grid', () => {
     };
     const { rerender } = mount(<Host initial={SMALL} dropMode="swap" changes={changes} onRender={onRender} />);
     const container = grid();
-    const marker = container.querySelector('.gm-marker');
+    const marker = container.querySelector('.dash-marker');
     rerender(<Host initial={SMALL} dropMode="swap" changes={changes} onRender={onRender} />);
     rerender(<Host initial={SMALL} dropMode="swap" changes={changes} onRender={onRender} />);
     expect(renders).toBe(3);
-    expect(container.classList.contains('gm-grid')).toBe(true);
-    expect(container.querySelector('.gm-marker')).toBe(marker); // same controller
+    expect(container.classList.contains('dash-grid')).toBe(true);
+    expect(container.querySelector('.dash-marker')).toBe(marker); // same controller
 
     swap(['a', 'b']);
     expect(calledBy).toEqual([3]);
     expect(changes.length).toBe(1);
-    expect(container.classList.contains('gm-grid')).toBe(true);
+    expect(container.classList.contains('dash-grid')).toBe(true);
   });
 
   it('unmount mid-drag leaves no ghost', () => {
@@ -331,9 +331,9 @@ describe('Grid', () => {
     stubRects(['a', 'b']);
     down(el('a')!, 50, 40);
     move(158, 40);
-    expect(document.querySelector('.gm-ghost')).not.toBeNull();
+    expect(document.querySelector('.dash-ghost')).not.toBeNull();
     unmount();
-    expect(document.querySelector('.gm-ghost')).toBeNull();
+    expect(document.querySelector('.dash-ghost')).toBeNull();
   });
 
   it('a className change keeps the core classes and variables', () => {
@@ -346,23 +346,23 @@ describe('Grid', () => {
     // wide (breakpoint 0)
     const { rerender, unmount } = mount(ui('one', 0));
     rerender(ui('two', 0));
-    expect(grid().classList.contains('gm-grid')).toBe(true);
+    expect(grid().classList.contains('dash-grid')).toBe(true);
     expect(grid().classList.contains('two')).toBe(true);
     expect(grid().classList.contains('one')).toBe(false);
-    expect(grid().classList.contains('gm-grid--narrow')).toBe(false);
-    expect(grid().style.getPropertyValue('--gm-columns')).toBe('4');
+    expect(grid().classList.contains('dash-grid--narrow')).toBe(false);
+    expect(grid().style.getPropertyValue('--dash-columns')).toBe('4');
     expect(grid().style.display).toBe('grid');
     expect(col('a')).toBe('1 / span 2');
     unmount();
 
     // narrow (happy-dom's clientWidth is 0, below the default 640 breakpoint)
     const narrow = mount(ui('one', 640));
-    expect(grid().classList.contains('gm-grid--narrow')).toBe(true);
+    expect(grid().classList.contains('dash-grid--narrow')).toBe(true);
     narrow.rerender(ui('two', 640));
-    expect(grid().classList.contains('gm-grid')).toBe(true);
-    expect(grid().classList.contains('gm-grid--narrow')).toBe(true);
+    expect(grid().classList.contains('dash-grid')).toBe(true);
+    expect(grid().classList.contains('dash-grid--narrow')).toBe(true);
     expect(grid().classList.contains('two')).toBe(true);
-    expect(grid().style.getPropertyValue('--gm-columns')).toBe('1');
+    expect(grid().style.getPropertyValue('--dash-columns')).toBe('1');
   });
 
   it('a style change that drops display keeps display: grid and the variables', () => {
@@ -372,14 +372,14 @@ describe('Grid', () => {
         <Widget id="a">a</Widget>
       </Grid>
     );
-    const { rerender } = mount(ui({ display: 'block', color: 'red', ['--gm-gap' as string]: '1px' }));
+    const { rerender } = mount(ui({ display: 'block', color: 'red', ['--dash-gap' as string]: '1px' }));
     expect(grid().style.display).toBe('grid');
     rerender(ui({ color: 'blue' }));
     expect(grid().style.display).toBe('grid');
     expect(grid().style.color).toBe('blue');
-    expect(grid().style.getPropertyValue('--gm-columns')).toBe('3');
-    expect(grid().style.getPropertyValue('--gm-gap')).toBe('8px');
-    expect(grid().classList.contains('gm-grid')).toBe(true);
+    expect(grid().style.getPropertyValue('--dash-columns')).toBe('3');
+    expect(grid().style.getPropertyValue('--dash-gap')).toBe('8px');
+    expect(grid().classList.contains('dash-grid')).toBe(true);
   });
 
   it('widget id change rebinds', () => {
@@ -391,11 +391,11 @@ describe('Grid', () => {
     );
     const { rerender } = mount(ui('x'));
     const w = root.querySelector('[data-grid-id]') as HTMLElement;
-    expect(w.style.getPropertyValue('--gm-col')).toBe('');
+    expect(w.style.getPropertyValue('--dash-col')).toBe('');
     rerender(ui('b'));
     expect(root.querySelector('[data-grid-id]')).toBe(w);
     expect(w.getAttribute('data-grid-id')).toBe('b');
-    expect(w.style.getPropertyValue('--gm-col')).toBe('1 / span 1');
+    expect(w.style.getPropertyValue('--dash-col')).toBe('1 / span 1');
   });
 
   it('wrapper component renders a direct child', () => {
@@ -416,9 +416,9 @@ describe('Grid', () => {
 });
 
 describe('Widget inside Grid', () => {
-  const handle = (id: string) => el(id)!.querySelector(':scope > .gm-resize-handle');
+  const handle = (id: string) => el(id)!.querySelector(':scope > .dash-resize-handle');
 
-  it('a Widget className change keeps gm-item and the placement', () => {
+  it('a Widget className change keeps dash-item and the placement', () => {
     const layout = [{ id: 'a', w: 2, h: 1 }];
     const ui = (cls?: string) => (
       <Grid columns={4} breakpoint={0} layout={layout}>
@@ -428,14 +428,14 @@ describe('Widget inside Grid', () => {
       </Grid>
     );
     const { rerender } = mount(ui('one'));
-    expect(el('a')!.classList.contains('gm-item')).toBe(true);
+    expect(el('a')!.classList.contains('dash-item')).toBe(true);
     rerender(ui('two'));
-    expect(el('a')!.classList.contains('gm-item')).toBe(true);
+    expect(el('a')!.classList.contains('dash-item')).toBe(true);
     expect(el('a')!.classList.contains('two')).toBe(true);
     expect(el('a')!.classList.contains('one')).toBe(false);
     expect(col('a')).toBe('1 / span 2');
     rerender(ui(undefined));
-    expect(el('a')!.classList.contains('gm-item')).toBe(true);
+    expect(el('a')!.classList.contains('dash-item')).toBe(true);
     expect(el('a')!.classList.contains('two')).toBe(false);
     expect(col('a')).toBe('1 / span 2');
   });
@@ -477,7 +477,7 @@ describe('Widget inside Grid', () => {
     );
     expect(el('b')).toBeNull();
     await act(async () => show(true));
-    expect(el('b')!.classList.contains('gm-item')).toBe(true);
+    expect(el('b')!.classList.contains('dash-item')).toBe(true);
     expect(col('b')).toBe('2 / span 1');
     expect(handle('b')).not.toBeNull();
 
@@ -540,7 +540,7 @@ describe('Widget inside Grid', () => {
     const b = el('b')!;
     expect(b.textContent).toBe('ready');
     expect(b.classList.contains('fallback')).toBe(false);
-    expect(b.classList.contains('gm-item')).toBe(true);
+    expect(b.classList.contains('dash-item')).toBe(true);
     expect(col('b')).toBe('2 / span 1');
     expect(handle('b')).not.toBeNull();
 
@@ -548,7 +548,7 @@ describe('Widget inside Grid', () => {
     stubRects(['a', 'b']);
     down(b, 158, 40);
     move(50, 40);
-    expect(b.classList.contains('gm-item--placeholder')).toBe(true);
+    expect(b.classList.contains('dash-item--placeholder')).toBe(true);
     up(50, 40);
   });
 
@@ -589,12 +589,12 @@ describe('Widget inside Grid', () => {
     stubRects(['a', 'b']);
     down(el('b')!, 158, 40);
     move(120, 40); // past the threshold
-    expect(el('b')!.classList.contains('gm-item--placeholder')).toBe(true);
+    expect(el('b')!.classList.contains('dash-item--placeholder')).toBe(true);
     await act(async () => tick());
     expect(el('b')!.firstChild!.textContent).toBe('b 1');
     expect(handle('b')).not.toBeNull();
-    expect(el('b')!.classList.contains('gm-item--placeholder')).toBe(true);
-    expect(document.querySelector('.gm-ghost')).not.toBeNull();
+    expect(el('b')!.classList.contains('dash-item--placeholder')).toBe(true);
+    expect(document.querySelector('.dash-ghost')).not.toBeNull();
     move(50, 40); // over a
     up(50, 40);
     expect(changes.length).toBe(1);
@@ -609,6 +609,6 @@ describe('Widget inside Grid', () => {
         <Widget id="a" />
       </Grid>,
     );
-    expect(html).toContain('class="gm-item" data-grid-id="a"');
+    expect(html).toContain('class="dash-item" data-grid-id="a"');
   });
 });

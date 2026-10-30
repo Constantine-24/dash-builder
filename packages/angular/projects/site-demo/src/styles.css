@@ -1,7 +1,7 @@
-@import '@grid-master/core/grid.css';
-@import '@grid-master/demo-kit/theme.css';
-@import '@grid-master/demo-kit/blocks.css';
-@import '@grid-master/demo-kit/controls.css';
+@import '@dash-builder/core/grid.css';
+@import '@dash-builder/demo-kit/theme.css';
+@import '@dash-builder/demo-kit/blocks.css';
+@import '@dash-builder/demo-kit/controls.css';
 
 /* The base rules below match site/src/shared.css (the vanilla and React pages use the same ones). */
 *,

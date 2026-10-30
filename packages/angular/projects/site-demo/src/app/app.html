@@ -14,7 +14,7 @@
   }
 </div>
 <p class="hero-hint" aria-live="polite">{{ current().hint }}</p>
-<gm-grid
+<dash-grid
   [columns]="gridOptions.columns"
   [rowHeight]="gridOptions.rowHeight"
   [gap]="gridOptions.gap"
@@ -22,7 +22,7 @@
   [dropMode]="current().mode"
 >
   @for (item of layout(); track item.id) {
-    <div [gmWidget]="item.id" [demoBlock]="item.id" [locked]="item.locked === true"></div>
+    <div [dashWidget]="item.id" [demoBlock]="item.id" [locked]="item.locked === true"></div>
   }
-</gm-grid>
-<p class="angular-app__caption">Built with @grid-master/angular</p>
+</dash-grid>
+<p class="angular-app__caption">Built with @dash-builder/angular</p>

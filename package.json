@@ -1,11 +1,23 @@
 {
-  "name": "grid-master",
+  "name": "dash-builder-monorepo",
   "private": true,
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "test": "pnpm -r test",
     "test:smoke": "pnpm -r test:smoke",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "build:site": "pnpm -r build && pnpm --filter @grid-master/site build:site && pnpm --filter @grid-master/site check"
+    "build:site": "pnpm -r build && pnpm --filter @dash-builder/site build:site && pnpm --filter @dash-builder/site check",
+    "changeset": "changeset",
+    "version-packages": "changeset version && pnpm install --lockfile-only",
+    "release": "pnpm build && pnpm test && pnpm pack:check && changeset publish",
+    "pack:check": "node scripts/pack-check.mjs"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@changesets/cli": "^2.31.1"
   }
 }

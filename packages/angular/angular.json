@@ -10,7 +10,7 @@
       "projectType": "library",
       "root": "projects/grid-angular",
       "sourceRoot": "projects/grid-angular/src",
-      "prefix": "gm",
+      "prefix": "dash",
       "architect": {
         "build": {
           "builder": "@angular/build:ng-packagr",

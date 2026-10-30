@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Grid } from '@grid-master/react';
-import type { LayoutItem } from '@grid-master/react';
-import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
+import { Grid } from '@dash-builder/react';
+import type { LayoutItem } from '@dash-builder/react';
+import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@dash-builder/demo-kit';
 import { Block } from './block.js';
 
 /** The drop-mode segmented control: same classes and ARIA as the vanilla `createModeSwitch`. */
@@ -73,7 +73,7 @@ export function App() {
           <Block key={item.id} id={item.id} locked={item.locked === true} />
         ))}
       </Grid>
-      <p className="react-app__caption">Built with @grid-master/react</p>
+      <p className="react-app__caption">Built with @dash-builder/react</p>
     </div>
   );
 }

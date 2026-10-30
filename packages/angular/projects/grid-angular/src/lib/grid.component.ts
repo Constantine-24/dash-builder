@@ -16,9 +16,9 @@ import {
   output,
   untracked,
 } from '@angular/core';
-import { addItem as planAdd, createGrid, normalizeLayout, removeItem as planRemove } from '@grid-master/core';
-import type { DropMode, DropResult, GridController, GridOptions, LayoutItem, RejectReason } from '@grid-master/core';
-import { GmWidget } from './widget.directive';
+import { addItem as planAdd, createGrid, normalizeLayout, removeItem as planRemove } from '@dash-builder/core';
+import type { DropMode, DropResult, GridController, GridOptions, LayoutItem, RejectReason } from '@dash-builder/core';
+import { DashWidget } from './widget.directive';
 
 /** `numberAttribute`, but unset (`undefined`, `null` or an empty attribute) stays `undefined`. */
 function optionalNumber(value: unknown): number | undefined {
@@ -26,15 +26,15 @@ function optionalNumber(value: unknown): number | undefined {
 }
 
 /**
- * A dashboard grid around the `@grid-master/core` controller. The host element is
- * the grid container; projected `[gmWidget]` elements are its widgets.
+ * A dashboard grid around the `@dash-builder/core` controller. The host element is
+ * the grid container; projected `[dashWidget]` elements are its widgets.
  */
 @Component({
-  selector: 'gm-grid',
+  selector: 'dash-grid',
   template: '<ng-content />',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GmGrid {
+export class DashGrid {
   readonly layout = model.required<LayoutItem[]>();
   readonly columns = input.required<number, unknown>({ transform: numberAttribute });
   readonly dropMode = input<DropMode>('insert');
@@ -48,7 +48,7 @@ export class GmGrid {
 
   private readonly zone = inject(NgZone);
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
-  private readonly widgets = contentChildren(GmWidget);
+  private readonly widgets = contentChildren(DashWidget);
   private grid?: GridController;
   /** The layout last handed to the controller. */
   private applied?: LayoutItem[];
@@ -108,7 +108,7 @@ export class GmGrid {
     });
     // After the DOM update: bind added, re-id'd or reordered widgets, release removed ones.
     afterRenderEffect(() => {
-      this.widgets().forEach((w) => w.gmWidget()); // tracks every widget id
+      this.widgets().forEach((w) => w.dashWidget()); // tracks every widget id
       this.outside((g) => g.refresh());
     });
   }

@@ -1,8 +1,8 @@
 /*
- * Public API Surface of @grid-master/angular
+ * Public API Surface of @dash-builder/angular
  */
 
-export { GmWidget } from './lib/widget.directive';
-export { GmHandle } from './lib/handle.directive';
-export { GmGrid } from './lib/grid.component';
-export type { LayoutItem, DropMode, RejectReason, DropResult } from '@grid-master/core';
+export { DashWidget } from './lib/widget.directive';
+export { DashHandle } from './lib/handle.directive';
+export { DashGrid } from './lib/grid.component';
+export type { LayoutItem, DropMode, RejectReason, DropResult } from '@dash-builder/core';

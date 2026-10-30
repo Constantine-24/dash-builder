@@ -1,4 +1,4 @@
-import type { LayoutItem } from '@grid-master/core';
+import type { LayoutItem } from '@dash-builder/core';
 
 export type BlockKind = 'number' | 'chart' | 'list' | 'map' | 'form' | 'note';
 

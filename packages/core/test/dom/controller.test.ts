@@ -12,8 +12,8 @@ const L: LayoutItem[] = [
 
 let container: HTMLElement;
 const el = (id: string) => container.querySelector(`[data-grid-id="${id}"]`) as HTMLElement;
-const col = (id: string) => el(id).style.getPropertyValue('--gm-col');
-const row = (id: string) => el(id).style.getPropertyValue('--gm-row');
+const col = (id: string) => el(id).style.getPropertyValue('--dash-col');
+const row = (id: string) => el(id).style.getPropertyValue('--dash-row');
 
 function setup(ids = ['A', 'B', 'C', 'D'], width = 1000) {
   container = document.createElement('div');
@@ -34,21 +34,21 @@ describe('createGrid', () => {
     expect(col('A')).toBe('1 / span 1');
     expect(col('B')).toBe('2 / span 3');
     expect(row('C')).toBe('2 / span 1');
-    expect(container.classList.contains('gm-grid')).toBe(true);
-    expect(el('A').classList.contains('gm-item')).toBe(true);
+    expect(container.classList.contains('dash-grid')).toBe(true);
+    expect(el('A').classList.contains('dash-item')).toBe(true);
     expect(container.style.display).toBe('grid');
-    expect(container.style.getPropertyValue('--gm-columns')).toBe('4');
-    expect(container.style.getPropertyValue('--gm-row-height')).toBe('80px');
-    expect(container.style.getPropertyValue('--gm-gap')).toBe('8px');
-    expect(container.querySelectorAll('.gm-marker').length).toBe(1);
-    expect(container.querySelectorAll('.gm-resize-handle').length).toBe(4);
+    expect(container.style.getPropertyValue('--dash-columns')).toBe('4');
+    expect(container.style.getPropertyValue('--dash-row-height')).toBe('80px');
+    expect(container.style.getPropertyValue('--dash-gap')).toBe('8px');
+    expect(container.querySelectorAll('.dash-marker').length).toBe(1);
+    expect(container.querySelectorAll('.dash-resize-handle').length).toBe(4);
   });
 
   test('locked widgets get no resize handle', () => {
     setup();
     createGrid(container, { columns: 4, layout: L.map((i) => (i.id === 'A' ? { ...i, locked: true } : i)) });
-    expect(el('A').querySelector('.gm-resize-handle')).toBeNull();
-    expect(el('B').querySelector('.gm-resize-handle')).not.toBeNull();
+    expect(el('A').querySelector('.dash-resize-handle')).toBeNull();
+    expect(el('B').querySelector('.dash-resize-handle')).not.toBeNull();
   });
 
   test('setOptions without columns change does not emit', () => {
@@ -110,9 +110,9 @@ describe('createGrid', () => {
     const a = el('A');
     a.dataset.gridId = 'Z';
     g.refresh();
-    expect(a.classList.contains('gm-item')).toBe(true);
-    expect(a.style.getPropertyValue('--gm-col')).toBe('1 / span 1');
-    expect(a.style.getPropertyValue('--gm-row')).toBe('3 / span 1');
+    expect(a.classList.contains('dash-item')).toBe(true);
+    expect(a.style.getPropertyValue('--dash-col')).toBe('1 / span 1');
+    expect(a.style.getPropertyValue('--dash-row')).toBe('3 / span 1');
   });
 
   test('duplicate ids: first wins, later hidden, refresh is stable; un-hidden on destroy', () => {
@@ -120,9 +120,9 @@ describe('createGrid', () => {
     const g = createGrid(container, { columns: 4, layout: L });
     const [first, dup] = Array.from(container.querySelectorAll<HTMLElement>('[data-grid-id="A"]'));
     expect(first.hidden).toBe(false);
-    expect(first.classList.contains('gm-item')).toBe(true);
+    expect(first.classList.contains('dash-item')).toBe(true);
     expect(dup.hidden).toBe(true);
-    expect(dup.classList.contains('gm-item')).toBe(false);
+    expect(dup.classList.contains('dash-item')).toBe(false);
     g.refresh();
     g.refresh();
     expect(first.hidden).toBe(false);
@@ -144,7 +144,7 @@ describe('createGrid', () => {
   test('grid.css forces hidden widgets to display none', async () => {
     const { readFileSync } = await import('node:fs');
     const css = readFileSync('src/styles/grid.css', 'utf8');
-    expect(css).toMatch(/\.gm-item\[hidden\][^{]*\{\s*display:\s*none\s*!important/);
+    expect(css).toMatch(/\.dash-item\[hidden\][^{]*\{\s*display:\s*none\s*!important/);
   });
 
   test('setOptions columns change that alters the layout emits it', () => {
@@ -164,17 +164,17 @@ describe('createGrid', () => {
     const g = createGrid(container, { columns: 4, layout: L });
     g.setOptions({ columns: 2 });
     expect(g.getLayout().find((i) => i.id === 'B')!.w).toBe(2);
-    expect(container.style.getPropertyValue('--gm-columns')).toBe('2');
+    expect(container.style.getPropertyValue('--dash-columns')).toBe('2');
   });
 
   test('narrow view below breakpoint', () => {
     setup(['A', 'B', 'C', 'D'], 500);
     const g = createGrid(container, { columns: 4, layout: L });
     g.refresh();
-    expect(container.classList.contains('gm-grid--narrow')).toBe(true);
+    expect(container.classList.contains('dash-grid--narrow')).toBe(true);
     for (const id of ['A', 'B', 'C', 'D']) expect(col(id)).toBe('1 / span 1');
     expect(row('D')).toBe('4 / span 1');
-    expect(container.style.getPropertyValue('--gm-columns')).toBe('1');
+    expect(container.style.getPropertyValue('--dash-columns')).toBe('1');
   });
 
   test('refresh picks up newly added children', () => {
@@ -184,21 +184,21 @@ describe('createGrid', () => {
     d.dataset.gridId = 'D';
     container.appendChild(d);
     g.refresh();
-    expect(d.classList.contains('gm-item')).toBe(true);
-    expect(d.style.getPropertyValue('--gm-col')).toBe('3 / span 2');
+    expect(d.classList.contains('dash-item')).toBe(true);
+    expect(d.style.getPropertyValue('--dash-col')).toBe('3 / span 2');
   });
 
   test('destroy removes injected elements, classes and styles', () => {
     setup();
     const g = createGrid(container, { columns: 4, layout: L });
     g.destroy();
-    expect(container.querySelector('.gm-marker')).toBeNull();
-    expect(container.querySelector('.gm-resize-handle')).toBeNull();
-    expect(container.classList.contains('gm-grid')).toBe(false);
-    expect(el('A').classList.contains('gm-item')).toBe(false);
-    expect(el('A').style.getPropertyValue('--gm-col')).toBe('');
+    expect(container.querySelector('.dash-marker')).toBeNull();
+    expect(container.querySelector('.dash-resize-handle')).toBeNull();
+    expect(container.classList.contains('dash-grid')).toBe(false);
+    expect(el('A').classList.contains('dash-item')).toBe(false);
+    expect(el('A').style.getPropertyValue('--dash-col')).toBe('');
     expect(container.style.display).toBe('');
-    expect(container.style.getPropertyValue('--gm-columns')).toBe('');
+    expect(container.style.getPropertyValue('--dash-columns')).toBe('');
   });
 
   test('after destroy every method is inert: nothing is re-applied and no listener fires', () => {
@@ -213,11 +213,11 @@ describe('createGrid', () => {
     g.removeItem('A');
     g.refresh();
     g.destroy(); // idempotent
-    expect(container.className).not.toMatch(/gm-/);
-    expect(container.querySelector('[class*="gm-"]')).toBeNull();
-    expect(container.querySelector('.gm-marker, .gm-resize-handle')).toBeNull();
-    expect(container.style.cssText).not.toMatch(/--gm-/);
-    for (const id of ['A', 'B', 'C', 'D']) expect(el(id).style.cssText).not.toMatch(/--gm-/);
+    expect(container.className).not.toMatch(/dash-/);
+    expect(container.querySelector('[class*="dash-"]')).toBeNull();
+    expect(container.querySelector('.dash-marker, .dash-resize-handle')).toBeNull();
+    expect(container.style.cssText).not.toMatch(/--dash-/);
+    for (const id of ['A', 'B', 'C', 'D']) expect(el(id).style.cssText).not.toMatch(/--dash-/);
     expect(g.getLayout()).toEqual(L);
     expect(g.getLayout()).not.toBe(g.getLayout());
     // a former widget does not start a drag
@@ -225,7 +225,7 @@ describe('createGrid', () => {
     el('A').dispatchEvent(new PE('pointerdown', { clientX: 5, clientY: 5, bubbles: true, button: 0 }));
     document.dispatchEvent(new PE('pointermove', { clientX: 60, clientY: 60, bubbles: true }));
     document.dispatchEvent(new PE('pointerup', { clientX: 60, clientY: 60, bubbles: true }));
-    expect(document.body.querySelector('.gm-ghost')).toBeNull();
+    expect(document.body.querySelector('.dash-ghost')).toBeNull();
     expect(onLayoutChange).not.toHaveBeenCalled();
     expect(onReject).not.toHaveBeenCalled();
   });
@@ -269,14 +269,14 @@ describe('ResizeObserver', () => {
   test('callback renders on the next frame, not synchronously, and flips narrow', () => {
     setup();
     createGrid(container, { columns: 4, layout: L });
-    expect(container.classList.contains('gm-grid--narrow')).toBe(false);
+    expect(container.classList.contains('dash-grid--narrow')).toBe(false);
     setWidth(500);
     roCallback!();
     roCallback!(); // a second notification before the frame schedules nothing more
-    expect(container.classList.contains('gm-grid--narrow')).toBe(false);
+    expect(container.classList.contains('dash-grid--narrow')).toBe(false);
     expect(frames.size).toBe(1);
     runFrames();
-    expect(container.classList.contains('gm-grid--narrow')).toBe(true);
+    expect(container.classList.contains('dash-grid--narrow')).toBe(true);
     expect(col('D')).toBe('1 / span 1');
   });
 

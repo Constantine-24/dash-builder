@@ -1,12 +1,12 @@
-# @grid-master/core
+# @dash-builder/core
 
 A framework-free TypeScript dashboard grid. Widgets flow left to right into a fixed number of columns, wrap into rows, and can be dragged and resized. There are no free x/y coordinates: the layout is an ordered list, and the grid positions the widgets from it.
 
 ## Install
 
 ```sh
-pnpm add @grid-master/core
-# or: npm install @grid-master/core
+pnpm add @dash-builder/core
+# or: npm install @dash-builder/core
 ```
 
 The package is ESM-only (`"type": "module"`, no CommonJS build): use `import`, not `require`.
@@ -24,9 +24,9 @@ The grid reads widgets from the DOM. Each direct child of the container that has
 ```
 
 ```ts
-import { createGrid } from '@grid-master/core';
-import '@grid-master/core/grid.css';
-import type { LayoutItem } from '@grid-master/core';
+import { createGrid } from '@dash-builder/core';
+import '@dash-builder/core/grid.css';
+import type { LayoutItem } from '@dash-builder/core';
 
 const save = (layout: LayoutItem[]) => localStorage.setItem('dashboard-layout', JSON.stringify(layout));
 
@@ -47,7 +47,7 @@ const grid = createGrid(document.getElementById('grid')!, {
 - Widgets are direct children of the container with a `data-grid-id` attribute. The first element with a given id wins; later duplicates are hidden. Widgets without a layout entry are hidden.
 - A widget containing a `[data-grid-handle]` element can only be dragged by that element. Without one, the whole widget is the drag surface.
 - The controller scans the container on every render. After you add or remove widget elements yourself, call `grid.refresh()` so it binds new elements and releases removed ones.
-- The container gets the `gm-grid` class and `display: grid`; widgets get `gm-item`. Both are removed again by `destroy()`.
+- The container gets the `dash-grid` class and `display: grid`; widgets get `dash-item`. Both are removed again by `destroy()`.
 
 ### Options
 
@@ -62,7 +62,7 @@ const grid = createGrid(document.getElementById('grid')!, {
 | `breakpoint` | `640` | Container width in px below which the narrow view is used. |
 | `onLayoutChange` | none | Called with a copy of the layout after a drop, a resize, `addItem`, `removeItem`, or when `setOptions({ columns })` changes widths. |
 | `onReject` | none | Called with a `RejectReason` when `addItem` is refused. |
-| `ghost` | sanitized clone | `(el: HTMLElement) => HTMLElement`: builds the element that follows the pointer during a drag. The grid adds the `gm-ghost` class, sizes and positions it, appends it to `body` and removes it on drop. |
+| `ghost` | sanitized clone | `(el: HTMLElement) => HTMLElement`: builds the element that follows the pointer during a drag. The grid adds the `dash-ghost` class, sizes and positions it, appends it to `body` and removes it on drop. |
 
 The default ghost is a deep clone of the widget with every `id` attribute removed, `name` removed from radio inputs (so the clone can't steal the original's checked state), each `iframe`, `video` and `audio` replaced by an empty box of the same rendered size (no reload, no second playback), and each `canvas` given a copy of the original's pixels (left blank if the canvas can't be read, for example when it is tainted). Pass `ghost` when you want something lighter, such as a plain box with a title.
 
@@ -126,7 +126,7 @@ The engine is also exported for use without the DOM: `planDrop`, `planResize`, `
 
 ## Interaction
 
-- Mouse: press on the widget (or its handle) and move to drag. Resize with the corner handle (`.gm-resize-handle`) at the bottom right of unlocked widgets.
+- Mouse: press on the widget (or its handle) and move to drag. Resize with the corner handle (`.dash-resize-handle`) at the bottom right of unlocked widgets.
 - Touch: a widget with a `[data-grid-handle]` drags immediately from the handle. A widget without one needs a 400 ms long-press before it drags, so normal scrolling still works. Resize handles start at once.
 - Form controls (`input`, `textarea`, `select`, `button`, `label`, links with `href`, editable text) inside a widget without a `[data-grid-handle]` never start a drag, so they stay usable. Add `data-grid-no-drag` to any other element to opt it out the same way. A `[data-grid-handle]` that is itself a `button` still drags. The widget root itself being a link, `label` or `button` doesn't count (it still drags; put `data-grid-no-drag` on the root to opt the whole widget out). For a widget whose body is a form control or a label, add a `[data-grid-handle]`: that is the way to drag it.
 - Dragging or resizing near the top or bottom edge of the scrolling area scrolls it.
@@ -138,16 +138,16 @@ When the container is narrower than `breakpoint` (default 640 px) the grid switc
 
 ## Styling
 
-Import `@grid-master/core/grid.css` and override these CSS custom properties on the container. The exception is `--gm-ghost-opacity`: the ghost is appended to `body`, outside the container, so set that one on `:root` or `body`.
+Import `@dash-builder/core/grid.css` and override these CSS custom properties on the container. The exception is `--dash-ghost-opacity`: the ghost is appended to `body`, outside the container, so set that one on `:root` or `body`.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `--gm-marker-color` | `#3b82f6` | Drop marker, swap outline and resize preview. |
-| `--gm-marker-blocked-color` | `#ef4444` | Same, when the drop or resize is refused. |
-| `--gm-placeholder-border` | `2px dashed #94a3b8` | Border of the placeholder left at the origin during a drag. |
-| `--gm-ghost-opacity` | `0.85` | Opacity of the widget following the pointer. Set on `:root` or `body`. |
+| `--dash-marker-color` | `#3b82f6` | Drop marker, swap outline and resize preview. |
+| `--dash-marker-blocked-color` | `#ef4444` | Same, when the drop or resize is refused. |
+| `--dash-placeholder-border` | `2px dashed #94a3b8` | Border of the placeholder left at the origin during a drag. |
+| `--dash-ghost-opacity` | `0.85` | Opacity of the widget following the pointer. Set on `:root` or `body`. |
 
-The controller sets `--gm-columns`, `--gm-row-height` and `--gm-gap` on the container from its options; do not set these yourself.
+The controller sets `--dash-columns`, `--dash-row-height` and `--dash-gap` on the container from its options; do not set these yourself.
 
 ## Development
 

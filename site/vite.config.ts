@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
-import { SITE, siteConfig } from '@grid-master/demo-kit';
+import { SITE, siteConfig } from '@dash-builder/demo-kit';
 
 const site = siteConfig(process.env);
 

@@ -1,7 +1,7 @@
 import { useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ComponentPropsWithoutRef, ReactNode, Ref } from 'react';
-import { addItem as planAdd, createGrid, normalizeLayout, removeItem as planRemove } from '@grid-master/core';
-import type { DropMode, DropResult, GridController, GridOptions, LayoutItem, RejectReason } from '@grid-master/core';
+import { addItem as planAdd, createGrid, normalizeLayout, removeItem as planRemove } from '@dash-builder/core';
+import type { DropMode, DropResult, GridController, GridOptions, LayoutItem, RejectReason } from '@dash-builder/core';
 import { GridContext } from './context.js';
 import type { GridContextValue } from './context.js';
 
@@ -43,7 +43,7 @@ function shallowEqual(a: CSSProperties | undefined, b: CSSProperties | undefined
 }
 
 /**
- * A dashboard grid around the `@grid-master/core` controller. The rendered div is the
+ * A dashboard grid around the `@dash-builder/core` controller. The rendered div is the
  * grid container; its direct `<Widget>` children are the widgets. Controlled: the
  * parent owns `layout`.
  */
@@ -149,9 +149,9 @@ export function Grid(props: GridProps) {
       g.setOptions(opts); // a columns change may normalize the layout and emit
     }
     // A className or style change makes React rewrite the class attribute or style keys,
-    // dropping what core set imperatively; core's render restores gm-grid--narrow and the
-    // --gm-* variables (gm-grid and display: grid are rendered by React below).
-    // gm-grid--dragging, set during a drag, is not restored: a className change mid-drag
+    // dropping what core set imperatively; core's render restores dash-grid--narrow and the
+    // --dash-* variables (dash-grid and display: grid are rendered by React below).
+    // dash-grid--dragging, set during a drag, is not restored: a className change mid-drag
     // drops it until the next drag (it only disables text selection / page scroll).
     const look = lastLook.current;
     const restyled = className !== look.className || !shallowEqual(style, look.style);
@@ -195,9 +195,9 @@ export function Grid(props: GridProps) {
   return (
     <div
       {...divProps}
-      // Core styles hang off gm-grid and need display: grid; rendering them here keeps them
+      // Core styles hang off dash-grid and need display: grid; rendering them here keeps them
       // when React rewrites the class attribute or style (and applies them in SSR markup).
-      className={className ? `gm-grid ${className}` : 'gm-grid'}
+      className={className ? `dash-grid ${className}` : 'dash-grid'}
       style={{ ...style, display: 'grid' }}
       ref={container}
     >

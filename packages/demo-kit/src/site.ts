@@ -6,7 +6,7 @@ export interface SiteConfig {
 }
 
 /** The library name, defined once. */
-export const SITE = { name: 'grid-master' };
+export const SITE = { name: 'dash-builder' };
 
 /**
  * Base path is `/<repo>/` whenever GITHUB_REPOSITORY is `<owner>/<repo>`, else `/`.

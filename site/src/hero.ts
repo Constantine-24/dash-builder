@@ -1,6 +1,6 @@
-import { computeFlow, createGrid, totalRows } from '@grid-master/core';
-import type { GridController, LayoutItem } from '@grid-master/core';
-import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
+import { computeFlow, createGrid, totalRows } from '@dash-builder/core';
+import type { GridController, LayoutItem } from '@dash-builder/core';
+import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@dash-builder/demo-kit';
 import { createModeSwitch } from './mode-switch.js';
 import { renderBlock } from './blocks-dom.js';
 

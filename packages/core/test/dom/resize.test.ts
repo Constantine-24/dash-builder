@@ -29,11 +29,11 @@ const PE: typeof MouseEvent = typeof PointerEvent !== 'undefined' ? PointerEvent
 
 let container: HTMLElement;
 const el = (id: string) => container.querySelector(`[data-grid-id="${id}"]`) as HTMLElement;
-const handle = (id: string) => el(id).querySelector(':scope > .gm-resize-handle') as HTMLElement | null;
-const col = (id: string) => el(id).style.getPropertyValue('--gm-col');
-const row = (id: string) => el(id).style.getPropertyValue('--gm-row');
-const preview = () => document.querySelector('.gm-resize-preview') as HTMLElement | null;
-const ghost = () => document.body.querySelector('.gm-ghost');
+const handle = (id: string) => el(id).querySelector(':scope > .dash-resize-handle') as HTMLElement | null;
+const col = (id: string) => el(id).style.getPropertyValue('--dash-col');
+const row = (id: string) => el(id).style.getPropertyValue('--dash-row');
+const preview = () => document.querySelector('.dash-resize-preview') as HTMLElement | null;
+const ghost = () => document.body.querySelector('.dash-ghost');
 const sizes = (layout: LayoutItem[]) => layout.map((i) => `${i.id}${i.w}x${i.h}`);
 const snapshot = () => ['A', 'B', 'C', 'D'].map((id) => [col(id), row(id)]);
 
@@ -104,7 +104,7 @@ describe('resize', () => {
     expect(p).not.toBeNull();
     expect(p.parentElement).toBe(container);
     expect(p.hidden).toBe(false);
-    expect(p.classList.contains('gm-resize-preview--blocked')).toBe(false);
+    expect(p.classList.contains('dash-resize-preview--blocked')).toBe(false);
     expect([p.style.left, p.style.top, p.style.width, p.style.height]).toEqual(['0px', '0px', '208px', '80px']);
     expect(snapshot()).toEqual(before);
     expect(onLayoutChange).not.toHaveBeenCalled();
@@ -143,7 +143,7 @@ describe('resize', () => {
     const { g, onLayoutChange } = grid({ dropMode: 'block' });
     down(handle('A')!, HX, HY);
     move(HX + 108, HY);
-    expect(preview()!.classList.contains('gm-resize-preview--blocked')).toBe(true);
+    expect(preview()!.classList.contains('dash-resize-preview--blocked')).toBe(true);
     up(HX + 108, HY);
     expect(onLayoutChange).not.toHaveBeenCalled();
     expect(preview()).toBeNull();
@@ -155,7 +155,7 @@ describe('resize', () => {
     const { onLayoutChange } = grid({ dropMode: 'shrink' });
     down(handle('A')!, HX, HY);
     move(HX + 108, HY);
-    expect(preview()!.classList.contains('gm-resize-preview--blocked')).toBe(false);
+    expect(preview()!.classList.contains('dash-resize-preview--blocked')).toBe(false);
     up(HX + 108, HY);
     expect(onLayoutChange).toHaveBeenCalledTimes(1);
     expect(sizes(onLayoutChange.mock.calls[0][0])).toEqual(['A2x1', 'B2x1', 'C2x1', 'D2x1']);
@@ -167,7 +167,7 @@ describe('resize', () => {
     down(handle('A')!, HX, HY);
     move(HX, HY + 88);
     const p = preview()!;
-    expect(p.classList.contains('gm-resize-preview--blocked')).toBe(false);
+    expect(p.classList.contains('dash-resize-preview--blocked')).toBe(false);
     expect([p.style.width, p.style.height]).toEqual(['100px', '168px']);
     up(HX, HY + 88);
     expect(onLayoutChange).toHaveBeenCalledTimes(1);
@@ -212,7 +212,7 @@ describe('resize', () => {
   test('narrow view refuses to resize', () => {
     setup(NARROW, 300);
     const { onLayoutChange } = grid();
-    expect(container.classList.contains('gm-grid--narrow')).toBe(true);
+    expect(container.classList.contains('dash-grid--narrow')).toBe(true);
     const h = handle('A')!; // present in the DOM, hidden by CSS
     down(h, 398, 78);
     move(398 + 108, 78 + 88);
@@ -250,7 +250,7 @@ describe('resize', () => {
     move(HX + 108, HY);
     g.destroy();
     expect(preview()).toBeNull();
-    expect(container.classList.contains('gm-grid--resizing')).toBe(false);
+    expect(container.classList.contains('dash-grid--resizing')).toBe(false);
     expect(document.body.style.userSelect).toBe('');
     up(HX + 108, HY);
     expect(onLayoutChange).not.toHaveBeenCalled();
@@ -339,11 +339,11 @@ describe('resize', () => {
       return e.defaultPrevented;
     };
     down(handle('A')!, HX, HY);
-    expect(container.classList.contains('gm-grid--resizing')).toBe(true);
+    expect(container.classList.contains('dash-grid--resizing')).toBe(true);
     expect(document.body.style.userSelect).toBe('none');
     expect(select()).toBe(true);
     up(HX, HY);
-    expect(container.classList.contains('gm-grid--resizing')).toBe(false);
+    expect(container.classList.contains('dash-grid--resizing')).toBe(false);
     expect(document.body.style.userSelect).toBe('');
     expect(select()).toBe(false);
   });
@@ -373,7 +373,7 @@ describe('resize', () => {
     const { onLayoutChange } = grid({ dropMode: 'swap' });
     down(handle('A')!, HX, HY);
     move(HX + 108, HY);
-    expect(preview()!.classList.contains('gm-resize-preview--blocked')).toBe(true);
+    expect(preview()!.classList.contains('dash-resize-preview--blocked')).toBe(true);
     up(HX + 108, HY);
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
@@ -385,7 +385,7 @@ describe('resize', () => {
     move(HX, HY + 176);
     const p = preview()!;
     expect(p.style.height).toBe('256px');
-    expect(p.classList.contains('gm-resize-preview--blocked')).toBe(true);
+    expect(p.classList.contains('dash-resize-preview--blocked')).toBe(true);
     up(HX, HY + 176);
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
@@ -420,17 +420,17 @@ describe('resize', () => {
       return e.defaultPrevented;
     };
     document.body.style.userSelect = 'text';
-    const h1 = first.querySelector('[data-grid-id="A"] > .gm-resize-handle') as HTMLElement;
-    const h2 = second.querySelector('[data-grid-id="A"] > .gm-resize-handle') as HTMLElement;
+    const h1 = first.querySelector('[data-grid-id="A"] > .dash-resize-handle') as HTMLElement;
+    const h2 = second.querySelector('[data-grid-id="A"] > .dash-resize-handle') as HTMLElement;
     // grid 1: drag C (pointer 1); grid 2: resize A (pointer 2)
     down(first.querySelector('[data-grid-id="C"]')!, 100, 128, { pointerId: 1 });
     move(150, 40, { pointerId: 1 });
     expect(ghost()).not.toBeNull();
     down(h2, HX, HY, { pointerId: 2 });
-    expect(second.classList.contains('gm-grid--resizing')).toBe(true);
+    expect(second.classList.contains('dash-grid--resizing')).toBe(true);
     // the drag in grid 1 ends; the resize in grid 2 is still held
     up(150, 40, { pointerId: 1 });
-    expect(first.classList.contains('gm-grid--dragging')).toBe(false);
+    expect(first.classList.contains('dash-grid--dragging')).toBe(false);
     expect(document.body.style.userSelect).toBe('none');
     expect(prevented('selectstart')).toBe(true);
     expect(prevented('touchmove')).toBe(true);
@@ -453,8 +453,8 @@ describe('resize', () => {
   test('grid.css: handle touch-action none, preview and resizing selection rules exist', async () => {
     const { readFileSync } = await import('node:fs');
     const css = readFileSync('src/styles/grid.css', 'utf8');
-    expect(css).toMatch(/\.gm-resize-handle\s*\{[^}]*touch-action:\s*none/);
-    expect(css).toContain('.gm-resize-preview--blocked');
-    expect(css).toMatch(/\.gm-grid--resizing \*/);
+    expect(css).toMatch(/\.dash-resize-handle\s*\{[^}]*touch-action:\s*none/);
+    expect(css).toContain('.dash-resize-preview--blocked');
+    expect(css).toMatch(/\.dash-grid--resizing \*/);
   });
 });

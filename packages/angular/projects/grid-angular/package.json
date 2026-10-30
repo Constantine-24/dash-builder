@@ -1,12 +1,37 @@
 {
-  "name": "@grid-master/angular",
+  "name": "@dash-builder/angular",
   "version": "0.0.0",
-  "description": "Angular bindings for @grid-master/core: a dashboard grid with draggable, resizable widgets in a fixed number of columns.",
+  "description": "Angular bindings for @dash-builder/core: a dashboard grid with draggable, resizable widgets in a fixed number of columns.",
   "license": "MIT",
+  "author": "Konstantin Penzin",
+  "homepage": "https://constantine-24.github.io/dash-builder/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Constantine-24/dash-builder.git",
+    "directory": "packages/angular/projects/grid-angular"
+  },
+  "bugs": {
+    "url": "https://github.com/Constantine-24/dash-builder/issues"
+  },
+  "keywords": [
+    "dashboard",
+    "grid",
+    "layout",
+    "widgets",
+    "drag-and-drop",
+    "resizable",
+    "draggable",
+    "angular"
+  ],
   "peerDependencies": {
     "@angular/common": "^22.0.0",
     "@angular/core": "^22.0.0",
-    "@grid-master/core": "0.x"
+    "@dash-builder/core": "workspace:0.x"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/grid-angular",
+    "linkDirectory": false
+  }
 }

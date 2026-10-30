@@ -1,4 +1,4 @@
-import type { DropMode } from '@grid-master/core';
+import type { DropMode } from '@dash-builder/core';
 
 /** Hints follow the "Drop modes" section of packages/core/README.md. */
 export const MODES: readonly { mode: DropMode; label: string; hint: string }[] = [

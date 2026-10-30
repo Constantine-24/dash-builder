@@ -10,6 +10,6 @@
   --site-radius: 10px;
   --site-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  --gm-marker-color: var(--site-accent);
-  --gm-placeholder-border: 2px dashed #94a3b8;
+  --dash-marker-color: var(--site-accent);
+  --dash-placeholder-border: 2px dashed #94a3b8;
 }

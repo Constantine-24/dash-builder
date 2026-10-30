@@ -1,17 +1,17 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { GmHandle } from './handle.directive';
-import { GmWidget } from './widget.directive';
+import { DashHandle } from './handle.directive';
+import { DashWidget } from './widget.directive';
 
 @Component({
-  imports: [GmWidget, GmHandle],
-  template: `<div class="w" [gmWidget]="id()"><span class="h" gmHandle>h</span></div>`,
+  imports: [DashWidget, DashHandle],
+  template: `<div class="w" [dashWidget]="id()"><span class="h" dashHandle>h</span></div>`,
 })
 class Host {
   readonly id = signal('a');
 }
 
-describe('gmWidget and gmHandle', () => {
+describe('dashWidget and dashHandle', () => {
   it('sets data-grid-id and follows the input', () => {
     const fixture = TestBed.createComponent(Host);
     fixture.detectChanges();

@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { siteConfig } from '@grid-master/demo-kit';
+import { siteConfig } from '@dash-builder/demo-kit';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
@@ -32,7 +32,7 @@ if (!existsSync(join(dist, 'react/index.html'))) {
 
 run('pnpm', [
   '--filter',
-  '@grid-master/angular-workspace',
+  '@dash-builder/angular-workspace',
   'exec',
   'ng',
   'build',

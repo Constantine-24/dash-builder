@@ -1,6 +1,6 @@
-import { createGrid } from '@grid-master/core';
-import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@grid-master/demo-kit';
-import type { SiteConfig } from '@grid-master/demo-kit';
+import { createGrid } from '@dash-builder/core';
+import { DEMO_LAYOUT, GRID_OPTIONS, MODES } from '@dash-builder/demo-kit';
+import type { SiteConfig } from '@dash-builder/demo-kit';
 import { renderBlock } from './blocks-dom.js';
 import { copyButton } from './footer.js';
 import { createModeSwitch } from './mode-switch.js';

@@ -1,12 +1,14 @@
-# grid-master
+# dash-builder
 
-A drag-and-drop grid layout library with a framework-agnostic core and thin wrappers.
+A drag-and-drop dashboard grid with a framework-agnostic core and thin Angular and React wrappers.
+
+**Demo:** https://constantine-24.github.io/dash-builder/
 
 | Package | Description |
 | --- | --- |
-| [`@grid-master/core`](packages/core/README.md) | Framework-agnostic grid engine (vanilla JS/TS) |
-| [`@grid-master/react`](packages/react/README.md) | React wrapper |
-| [`@grid-master/angular`](packages/angular/projects/grid-angular/README.md) | Angular wrapper |
+| [`@dash-builder/core`](packages/core/README.md) | Framework-agnostic grid engine (vanilla JS/TS) |
+| [`@dash-builder/react`](packages/react/README.md) | React wrapper |
+| [`@dash-builder/angular`](packages/angular/projects/grid-angular/README.md) | Angular wrapper |
 
 ## Development
 
@@ -15,7 +17,10 @@ pnpm install
 pnpm build       # build every package (not the demo site: see below)
 pnpm test        # run all tests
 pnpm typecheck
+pnpm pack:check  # pack the three packages as npm would and check the tarballs (after pnpm build)
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, changesets and releases.
 
 ## Demo site
 
@@ -26,7 +31,7 @@ Build and preview locally:
 
 ```sh
 export GITHUB_REPOSITORY=<owner>/<repo>
-pnpm build:site && pnpm --filter @grid-master/site preview
+pnpm build:site && pnpm --filter @dash-builder/site preview
 ```
 
 `pnpm build:site` builds all packages, then assembles `site/dist` (the site's own `build:site` script) and runs a dist check. The site base path is
