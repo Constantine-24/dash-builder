@@ -1,6 +1,6 @@
 {
   "name": "@dash-builder/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Framework-agnostic dashboard grid: draggable, resizable widgets that flow into a fixed number of columns. Zero dependencies.",
   "license": "MIT",
   "author": "Konstantin Penzin",
