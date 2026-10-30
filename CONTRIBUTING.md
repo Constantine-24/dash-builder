@@ -35,6 +35,22 @@ pnpm --filter @dash-builder/react demo   # React dev demo
 pnpm --filter @dash-builder/angular-workspace start   # Angular dev demo
 ```
 
+## Demo site
+
+`site/` is the GitHub Pages demo: a landing page with a draggable hero grid plus Vanilla JS, Angular and React tabs (the Angular and React apps are served from `/angular/` and `/react/`). Build and preview it locally:
+
+```bash
+export GITHUB_REPOSITORY=Constantine-24/dash-builder
+pnpm build:site && pnpm --filter @dash-builder/site preview
+```
+
+`pnpm build:site` builds all packages, assembles `site/dist` and runs a dist check. Environment variables:
+
+- `GITHUB_REPOSITORY=<owner>/<repo>`: base path `/<repo>/` and the GitHub links (set automatically by GitHub Actions; without it the base is `/`).
+- `SHOW_NPM=1`: show the npm links (once the packages are on npm).
+
+The README screenshot is `docs/images/demo.png`: the live site's first screen at 1280×800 (2× DPR).
+
 ## Pull requests
 
 1. Open an issue first for anything beyond a small fix, so we can agree on the API.
