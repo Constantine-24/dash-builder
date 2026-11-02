@@ -23,6 +23,9 @@
     "draggable",
     "angular"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "peerDependencies": {
     "@angular/common": "^22.0.0",
     "@angular/core": "^22.0.0",

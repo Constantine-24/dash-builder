@@ -1,6 +1,9 @@
 node_modules
 dist
 .superpowers/
-.claude/
+# Agent tooling: share only the guard-rail hook and its registration
+.claude/*
+!.claude/hooks/
+!.claude/settings.json
 packages/angular/.angular/
 packages/react/dist-demo
