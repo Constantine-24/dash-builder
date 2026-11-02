@@ -1,5 +1,11 @@
 # @dash-builder/react
 
+## 0.1.1
+
+### Patch Changes
+
+- cce4a15: Declare `engines.node` `>=22` in each package manifest. No code changes. This is also the first release published from CI, with npm provenance.
+
 ## 0.1.0
 
 ### Minor Changes
