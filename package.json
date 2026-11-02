@@ -13,8 +13,9 @@
     "build:site": "pnpm -r build && pnpm --filter @dash-builder/site build:site && pnpm --filter @dash-builder/site check",
     "changeset": "changeset",
     "version-packages": "changeset version && pnpm install --lockfile-only",
-    "release": "pnpm build && pnpm test && pnpm pack:check && changeset publish",
-    "pack:check": "node scripts/pack-check.mjs"
+    "release": "pnpm build && pnpm typecheck && pnpm test && pnpm test:smoke && pnpm pack:check && changeset publish",
+    "pack:check": "node scripts/pack-check.mjs",
+    "test:hooks": "node --test .claude/hooks/block-raw-tooling.test.js"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
