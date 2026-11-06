@@ -191,12 +191,12 @@ importers:
         specifier: ~7.8.0
         version: 7.8.2
       tslib:
-        specifier: ^2.3.0
-        version: 2.8.1
+        specifier: ^2.9.1
+        version: 2.9.1
     devDependencies:
       '@angular/build':
         specifier: 22.2.4
-        version: 22.2.4(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(@angular/compiler@22.2.3)(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(@angular/platform-browser@22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3)))(@types/node@26.6.5)(less@4.9.1(supports-color@8.1.1))(ng-packagr@22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.8.1)(typescript@6.0.3))(postcss@8.5.32)(supports-color@8.1.1)(tslib@2.8.1)(typescript@6.0.3)(vitest@5.0.5(@types/node@26.6.5)(happy-dom@21.0.4)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.104.1)(sass@1.104.1)))
+        version: 22.2.4(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(@angular/compiler@22.2.3)(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(@angular/platform-browser@22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3)))(@types/node@26.6.5)(less@4.9.1(supports-color@8.1.1))(ng-packagr@22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.9.1)(typescript@6.0.3))(postcss@8.5.32)(supports-color@8.1.1)(tslib@2.9.1)(typescript@6.0.3)(vitest@5.0.5(@types/node@26.6.5)(happy-dom@21.0.4)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.104.1)(sass@1.104.1)))
       '@angular/cli':
         specifier: 22.2.4
         version: 22.2.4(@types/node@26.6.5)(chokidar@5.0.0)
@@ -214,7 +214,7 @@ importers:
         version: 21.0.4
       ng-packagr:
         specifier: ^22.2.0
-        version: 22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.8.1)(typescript@6.0.3)
+        version: 22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.9.1)(typescript@6.0.3)
       typescript:
         specifier: ~6.0.2
         version: 6.0.3
@@ -3276,8 +3276,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tslib@2.8.1:
-    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+  tslib@2.9.1:
+    resolution: {integrity: sha512-a4Ux9VKuIMHsOS7ENbEq6hK2ZGYIT27Rtl0E4eD9KqwxhKiQeMZE/9xb3IdYwWaSOyIBQLExhQgXDTYoiCxnWA==}
 
   typescript@5.6.1-rc:
     resolution: {integrity: sha512-E3b2+1zEFu84jB0YQi9BORDjz9+jGbwwy1Zi3G0LUNw7a7cePUrHMRNy8aPh53nXpkFGVHSxIZo5vKTfYaFiBQ==}
@@ -3588,7 +3588,7 @@ snapshots:
     transitivePeerDependencies:
       - chokidar
 
-  '@angular/build@22.2.4(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(@angular/compiler@22.2.3)(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(@angular/platform-browser@22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3)))(@types/node@26.6.5)(less@4.9.1(supports-color@8.1.1))(ng-packagr@22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.8.1)(typescript@6.0.3))(postcss@8.5.32)(supports-color@8.1.1)(tslib@2.8.1)(typescript@6.0.3)(vitest@5.0.5(@types/node@26.6.5)(happy-dom@21.0.4)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.104.1)(sass@1.104.1)))':
+  '@angular/build@22.2.4(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(@angular/compiler@22.2.3)(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(@angular/platform-browser@22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3)))(@types/node@26.6.5)(less@4.9.1(supports-color@8.1.1))(ng-packagr@22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.9.1)(typescript@6.0.3))(postcss@8.5.32)(supports-color@8.1.1)(tslib@2.9.1)(typescript@6.0.3)(vitest@5.0.5(@types/node@26.6.5)(happy-dom@21.0.4)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.104.1)(sass@1.104.1)))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular-devkit/architect': 0.2202.4(chokidar@5.0.0)
@@ -3617,7 +3617,7 @@ snapshots:
       semver: 7.8.5
       source-map-support: 0.5.21
       tinyglobby: 0.2.17
-      tslib: 2.8.1
+      tslib: 2.9.1
       typescript: 6.0.3
       vite: 8.3.0(@types/node@26.6.5)(esbuild@0.28.2)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.104.1)(sass@1.104.1)
       xxhash-wasm: 1.1.0
@@ -3626,7 +3626,7 @@ snapshots:
       '@angular/platform-browser': 22.2.3(@angular/common@22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2))(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))
       less: 4.9.1(supports-color@8.1.1)
       lmdb: 3.5.6
-      ng-packagr: 22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.8.1)(typescript@6.0.3)
+      ng-packagr: 22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.9.1)(typescript@6.0.3)
       postcss: 8.5.32
       vitest: 5.0.5(@types/node@26.6.5)(happy-dom@21.0.4)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(less@4.9.1(supports-color@8.1.1))(sass-embedded@1.104.1)(sass@1.104.1))
     transitivePeerDependencies:
@@ -3665,7 +3665,7 @@ snapshots:
     dependencies:
       '@angular/core': 22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3)
       rxjs: 7.8.2
-      tslib: 2.8.1
+      tslib: 2.9.1
 
   '@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3)':
     dependencies:
@@ -3676,19 +3676,19 @@ snapshots:
       convert-source-map: 1.9.0
       reflect-metadata: 0.2.2
       semver: 7.8.5
-      tslib: 2.8.1
+      tslib: 2.9.1
       yargs: 18.2.0
     optionalDependencies:
       typescript: 6.0.3
 
   '@angular/compiler@22.2.3':
     dependencies:
-      tslib: 2.8.1
+      tslib: 2.9.1
 
   '@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3)':
     dependencies:
       rxjs: 7.8.2
-      tslib: 2.8.1
+      tslib: 2.9.1
     optionalDependencies:
       '@angular/compiler': 22.2.3
       zone.js: 0.16.3
@@ -3697,7 +3697,7 @@ snapshots:
     dependencies:
       '@angular/common': 22.2.3(@angular/core@22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3))(rxjs@7.8.2)
       '@angular/core': 22.2.3(@angular/compiler@22.2.3)(rxjs@7.8.2)(zone.js@0.16.3)
-      tslib: 2.8.1
+      tslib: 2.9.1
 
   '@arethetypeswrong/cli@0.18.5':
     dependencies:
@@ -5236,7 +5236,7 @@ snapshots:
 
   injection-js@2.6.1:
     dependencies:
-      tslib: 2.8.1
+      tslib: 2.9.1
 
   is-extglob@2.1.1: {}
 
@@ -5490,7 +5490,7 @@ snapshots:
       sax: 1.6.1
     optional: true
 
-  ng-packagr@22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.8.1)(typescript@6.0.3):
+  ng-packagr@22.2.5(@angular/compiler-cli@22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3))(supports-color@8.1.1)(tslib@2.9.1)(typescript@6.0.3):
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular/compiler-cli': 22.2.3(@angular/compiler@22.2.3)(typescript@6.0.3)
@@ -5512,7 +5512,7 @@ snapshots:
       sass: 1.106.1
       sass-embedded: 1.106.1
       tinyglobby: 0.2.17
-      tslib: 2.8.1
+      tslib: 2.9.1
       typescript: 6.0.3
     transitivePeerDependencies:
       - '@typescript/native-preview'
@@ -5804,7 +5804,7 @@ snapshots:
 
   rxjs@7.8.2:
     dependencies:
-      tslib: 2.8.1
+      tslib: 2.9.1
 
   safer-buffer@2.1.2: {}
 
@@ -6115,7 +6115,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tslib@2.8.1: {}
+  tslib@2.9.1: {}
 
   typescript@5.6.1-rc: {}
 
